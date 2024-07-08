@@ -15,6 +15,8 @@
 
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 from typing import Union, Callable, Optional
 
 import brainstate as bst

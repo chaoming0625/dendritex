@@ -5,6 +5,8 @@ This module implements voltage-dependent potassium channels.
 
 """
 
+from __future__ import annotations
+
 from typing import Union, Callable, Optional, Sequence
 
 import brainstate as bst

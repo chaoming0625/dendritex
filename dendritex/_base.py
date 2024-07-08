@@ -16,6 +16,8 @@
 
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 from typing import Optional, Dict, Sequence, Callable, NamedTuple, Tuple
 
 import brainstate as bst

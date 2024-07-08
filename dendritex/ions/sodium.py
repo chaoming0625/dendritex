@@ -13,13 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 
+from __future__ import annotations
 
 from typing import Union, Callable, Optional
 
 import brainstate as bst
 import brainunit as bu
 
-from .._base import Ion, Channel, check_hierarchies
+from .._base import Ion
 
 __all__ = [
   'Sodium',
@@ -57,4 +58,3 @@ class SodiumFixed(Sodium):
     )
     self.E = bst.init.param(E, self.varshape, allow_none=False)
     self.C = bst.init.param(C, self.varshape, allow_none=False)
-
