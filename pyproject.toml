@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools", "numpy", 'jax', 'jaxlib']
+build-backend = "setuptools.build_meta"
+
+
+[tool.setuptools.packages.find]
+exclude = [
+    "docs*", "build*", "dist*",
+    "dendritex.egg-info*", "dendritex/__pycache__*",
+    "dendritex/__init__.py"
+]
+
+
+[tool.distutils.bdist_wheel]
+universal = true
+
+
+[project]
+name = "dendritex"
+description = "Dendrite Modeling in Python"
+readme = 'README.md'
+license = { text = 'Apache-2.0 license' }
+requires-python = '>=3.9'
+authors = [{ name = 'dendritex Developers', email = 'chao.brain@qq.com' }]
+classifiers = [
+    'Natural Language :: English',
+    'Operating System :: OS Independent',
+    'Development Status :: 4 - Beta',
+    'Intended Audience :: Developers',
+    'Intended Audience :: Science/Research',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'License :: OSI Approved :: Apache Software License',
+    'Programming Language :: Python',
+    'Topic :: Scientific/Engineering :: Bio-Informatics',
+    'Topic :: Scientific/Engineering :: Mathematics',
+    'Topic :: Scientific/Engineering :: Artificial Intelligence',
+    'Topic :: Software Development :: Libraries',
+]
+
+
+keywords = ['physical unit', 'physical quantity', 'brain modeling']
+
+dependencies = [
+    'jax',
+    'jaxlib',
+    'numpy',
+    'brainstate',
+    'brainunit',
+]
+
+dynamic = ['version']
+
+[tool.flit.module]
+name = "dendritex"
+
+[project.urls]
+homepage = 'http://github.com/chaoming0625/dendritex'
+repository = 'http://github.com/chaoming0625/dendritex'
+
+[project.optional-dependencies]
+testing = [
+    'pytest',
+]
