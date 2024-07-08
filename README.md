@@ -45,7 +45,7 @@ The official documentation is hosted on Read the Docs: [https://dendritex.readth
 - [``braintaichi``](https://github.com/chaoming0625/braintaichi): Leveraging Taichi Lang to customize brain dynamics operators.
 
 - [``brainscale``](https://github.com/chaoming0625/brainscale): The scalable online learning framework for biological neural networks.
-- 
+
 - [``dendritex``](https://github.com/chaoming0625/dendritex): The dendritic modeling in JAx.
 
 - [``braintools``](https://github.com/chaoming0625/braintools): The toolbox for the brain dynamics simulation, training and analysis.
