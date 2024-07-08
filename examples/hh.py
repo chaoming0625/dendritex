@@ -34,22 +34,19 @@ class HH(dx.SingleCompartmentNeuron):
 
     self.IL = dx.IL(size, E=-54.387 * bu.mV, g_max=0.03 * (bu.mS / bu.cm ** 2))
 
+  def step_fun(self, t):
+    # dx.euler_step(hh, t, 10 * bu.nA)
+    # dx.rk2_step(hh, t, 10 * bu.nA)
+    # dx.rk3_step(hh, t, 10 * bu.nA)
+    dx.rk4_step(self, t, 10 * bu.nA)
+    return hh.V.value
+
 
 hh = HH([1, 1])
 hh.init_state()
 
-
-def step_fun(t):
-  # dx.euler_step(hh, t, 10 * bu.nA)
-  # dx.rk2_step(hh, t, 10 * bu.nA)
-  # dx.rk3_step(hh, t, 10 * bu.nA)
-  dx.rk4_step(hh, t, 10 * bu.nA)
-  return hh.V.value
-
-
 times = bu.math.arange(10000) * bst.environ.get_dt()
-vs = bst.transform.for_loop(step_fun, times)
+vs = bst.transform.for_loop(hh.step_fun, times)
 
 plt.plot(times / bu.ms, bu.math.squeeze(vs / bu.mV))
 plt.show()
-

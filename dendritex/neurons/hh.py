@@ -20,7 +20,7 @@ from typing import Union, Optional, Callable
 import brainstate as bst
 import brainunit as bu
 
-from .._base import HHTypedNeuron, IonChannel, check_hierarchies
+from .._base import HHTypedNeuron, IonChannel, TreeNode
 from .._integrators import State4Integral
 
 __all__ = [
@@ -97,37 +97,41 @@ class SingleCompartmentNeuron(HHTypedNeuron):
 
   def init_state(self, batch_size=None):
     self.V = State4Integral(bst.init.param(self._V_initializer, self.varshape, batch_size))
+    # self.spike = bst.ShortTermState(bst.init.param(bu.math.zeros, self.varshape, batch_size))
     nodes = self.nodes(level=1, include_self=False).subset(IonChannel).values()
-    check_hierarchies(self.__class__, *nodes)
+    TreeNode.check_hierarchies(self.__class__, *nodes)
     for channel in nodes:
       channel.init_state(self.V.value, batch_size=batch_size)
 
   def reset_state(self, batch_size=None):
     self.V.value = bst.init.param(self._V_initializer, self.varshape, batch_size)
+    # self.spike.value = bst.init.param(bu.math.zeros, self.varshape, batch_size)
     nodes = self.nodes(level=1, include_self=False).subset(IonChannel).values()
-    check_hierarchies(self.__class__, *nodes)
+    TreeNode.check_hierarchies(self.__class__, *nodes)
     for channel in nodes:
       channel.reset_state(self.V.value, batch_size=batch_size)
 
-  def update(self, x=0.):
+  def before_updates(self, *args):
+    pass
+
+  def compute_derivative(self, x=0.):
     # inputs
     x = x * (1e-3 / self.A)
 
     # check whether the children channels have the correct parents.
     channels = self.nodes(level=1, include_self=False).subset(IonChannel)
-    check_hierarchies(self.__class__, **channels)
+    TreeNode.check_hierarchies(self.__class__, **channels)
 
     # integrate the membrane potential
     self.V.derivative = self.derivative(self.V.value, bst.environ.get('t'), x)
-    # V = self.sum_delta_inputs(init=V)
 
     # integrate dynamics of ion and ion channels
     for node in channels.values():
-      node(self.V.value)
-    # self.V.value = V
+      node.compute_derivative(self.V.value)
 
-  def update_state(self):
-    pass
+  def after_integral(self, *args):
+    self.V.value = self.sum_delta_inputs(init=self.V.value)
+    # self.spike.value = self.get_spike()
 
   def get_spike(self, last_V):
     return bu.math.logical_and(last_V >= self.V_th, self.V.value < self.V_th)

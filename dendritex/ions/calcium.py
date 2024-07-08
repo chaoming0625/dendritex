@@ -22,8 +22,7 @@ from typing import Union, Callable, Optional
 import brainstate as bst
 import brainunit as bu
 
-from .._base import Ion, Channel, HHTypedNeuron, check_hierarchies
-from .._integrators import State4Integral
+from .._base import Ion, Channel, HHTypedNeuron, State4Integral
 
 __all__ = [
   'Calcium',
@@ -66,7 +65,7 @@ class CalciumFixed(Calcium):
   def reset_state(self, V, batch_size=None):
     ca_info = self.pack_info()
     nodes = self.nodes(level=1, include_self=False).subset(Channel).values()
-    check_hierarchies(type(self), *tuple(nodes))
+    self.check_hierarchies(type(self), *tuple(nodes))
     for node in nodes:
       node.reset_state(V, ca_info, batch_size=batch_size)
 
@@ -117,28 +116,27 @@ class _CalciumDynamics(Calcium):
   def init_state(self, V, batch_size=None):
     # Calcium concentration
     self.C = State4Integral(bst.init.param(self._C_initializer, self.varshape, batch_size))
+    self.E = bst.ShortTermState(self._reversal_potential(self.C.value))
+    super().init_state(V, batch_size)
 
   def reset_state(self, V, batch_size=None):
     self.C.value = bst.init.param(self._C_initializer, self.varshape, batch_size)
-    nodes = self.nodes(level=1, include_self=False).subset(Channel).values()
-    check_hierarchies(type(self), *tuple(nodes))
-    for node in nodes:
-      node.reset_state(V, self.pack_info(), batch_size=batch_size)
+    self.E.value = self._reversal_potential(self.C.value)
+    super().reset_state(V, batch_size)
 
-  def update(self, V):
+  def compute_derivative(self, V):
     ca_info = self.pack_info()
     nodes = self.nodes(level=1, include_self=False).subset(Channel).values()
-    check_hierarchies(type(self), *tuple(nodes))
+    self.check_hierarchies(type(self), *tuple(nodes))
     for node in nodes:
-      node.update(V, ca_info)
+      node.compute_derivative(V, ca_info)
     self.C.derivative = self.derivative(self.C.value, bst.environ.get('t'), V)
+
+  def after_integral(self, V):
+    self.E.value = self._reversal_potential(self.C.value)
 
   def _reversal_potential(self, C):
     return self._constant * bu.math.log(self.C0 / C)
-
-  @property
-  def E(self):
-    return self._reversal_potential(self.C.value)
 
 
 class CalciumDetailed(_CalciumDynamics):

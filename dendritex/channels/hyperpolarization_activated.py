@@ -11,8 +11,7 @@ from typing import Union, Callable, Optional
 import brainstate as bst
 import brainunit as bu
 
-from .._base import Channel, HHTypedNeuron
-from .._integrators import State4Integral
+from .._base import Channel, HHTypedNeuron, State4Integral
 
 __all__ = [
   'Ih_HM1992',
@@ -82,11 +81,14 @@ class Ih_HM1992(Channel):
   def reset_state(self, V, batch_size=None):
     self.p.value = self.f_p_inf(V)
 
-  def derivative(self, p, t, V):
-    return self.phi * (self.f_p_inf(V) - p) / self.f_p_tau(V) / bu.ms
+  def before_integral(self, V):
+    pass
 
-  def update(self, V):
-    self.p.derivative = self.derivative(self.p.value, bst.environ.get('t'), V)
+  def compute_derivative(self, V):
+    self.p.derivative = self.phi * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V) / bu.ms
+
+  def after_integral(self):
+    pass
 
   def current(self, V):
     return self.g_max * self.p.value * (self.E - V)
@@ -207,7 +209,7 @@ class Ih_HM1992(Channel):
 #   def dP1(self, P1, t, C_Ca):
 #     return self.k1 * C_Ca ** 4 * (1 - P1) - self.k2 * P1
 #
-#   def update(self, V, Ca: IonInfo):
+#   def update_state(self, V, Ca: IonInfo):
 #     self.O.value, self.OL.value, self.P1.value = self.integral(
 #       self.O.value, self.OL.value, self.P1.value, bst.environ.get('t'), V=V,
 #     )

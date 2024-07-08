@@ -12,8 +12,7 @@ from typing import Union, Callable, Optional
 import brainstate as bst
 import brainunit as bu
 
-from .._base import Channel, IonInfo
-from .._integrators import State4Integral
+from .._base import Channel, IonInfo, State4Integral
 from ..ions import Calcium
 
 __all__ = [
@@ -33,14 +32,23 @@ class CalciumChannel(Channel):
 
   root_type = Calcium
 
-  def update(self, V, Ca):
+  def before_integral(self, V, Ca: IonInfo):
+    pass
+
+  def after_integral(self, V, Ca: IonInfo):
+    pass
+
+  def compute_derivative(self, V, Ca: IonInfo):
+    pass
+
+  def current(self, V, Ca: IonInfo):
     raise NotImplementedError
 
-  def current(self, V, Ca):
-    raise NotImplementedError
+  def init_state(self, V, Ca: IonInfo, batch_size: int = None):
+    pass
 
-  def reset_state(self, V, Ca, batch_size: int = None):
-    raise NotImplementedError('Must be implemented by the subclass.')
+  def reset_state(self, V, Ca: IonInfo, batch_size: int = None):
+    pass
 
 
 class ICaN_IS2008(CalciumChannel):
@@ -110,14 +118,11 @@ class ICaN_IS2008(CalciumChannel):
     V = V / bu.mV
     self.p.value = 1.0 / (1 + bu.math.exp(-(V + 43.) / 5.2))
 
-  def dp(self, p, t, V):
+  def compute_derivative(self, V, Ca):
     V = V / bu.mV
     phi_p = 1.0 / (1 + bu.math.exp(-(V + 43.) / 5.2))
     p_inf = 2.7 / (bu.math.exp(-(V + 55.) / 15.) + bu.math.exp((V + 55.) / 15.)) + 1.6
-    return self.phi * (phi_p - p) / p_inf / bu.ms
-
-  def update(self, V, Ca):
-    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), V)
+    self.p.derivative = self.phi * (phi_p - self.p.value) / p_inf / bu.ms
 
   def current(self, V, Ca):
     M = Ca.C / (Ca.C + 0.2 * bu.mM)
@@ -185,15 +190,9 @@ class _ICa_p2q_ss(CalciumChannel):
       assert self.p.value.shape[0] == batch_size
       assert self.q.value.shape[0] == batch_size
 
-  def dp(self, p, t, V):
-    return self.phi_p * (self.f_p_inf(V) - p) / self.f_p_tau(V) / bu.ms
-
-  def dq(self, q, t, V):
-    return self.phi_q * (self.f_q_inf(V) - q) / self.f_q_tau(V) / bu.ms
-
-  def update(self, V, Ca):
-    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), V)
-    self.q.derivative = self.dq(self.q.value, bst.environ.get('t'), V)
+  def compute_derivative(self, V, Ca):
+    self.p.derivative = self.phi_p * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V) / bu.ms
+    self.q.derivative = self.phi_q * (self.f_q_inf(V) - self.q.value) / self.f_q_tau(V) / bu.ms
 
   def current(self, V, Ca):
     return self.g_max * self.p.value * self.p.value * self.q.value * (Ca.E - V)
@@ -270,15 +269,11 @@ class _ICa_p2q_markov(CalciumChannel):
     alpha, beta = self.f_q_alpha(V), self.f_q_beta(V)
     self.q.value = alpha / (alpha + beta)
 
-  def dp(self, p, t, V):
-    return self.phi_p * (self.f_p_alpha(V) * (1 - p) - self.f_p_beta(V) * p) / bu.ms
-
-  def dq(self, q, t, V):
-    return self.phi_q * (self.f_q_alpha(V) * (1 - q) - self.f_q_beta(V) * q) / bu.ms
-
-  def update(self, V, Ca):
-    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), V)
-    self.q.derivative = self.dq(self.q.value, bst.environ.get('t'), V)
+  def compute_derivative(self, V, Ca):
+    p = self.p.value
+    q = self.q.value
+    self.p.derivative = self.phi_p * (self.f_p_alpha(V) * (1 - p) - self.f_p_beta(V) * p) / bu.ms
+    self.q.derivative = self.phi_q * (self.f_q_alpha(V) * (1 - q) - self.f_q_beta(V) * q) / bu.ms
 
   def current(self, V, Ca):
     return self.g_max * self.p.value * self.p.value * self.q.value * (Ca.E - V)
