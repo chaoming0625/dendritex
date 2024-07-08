@@ -118,7 +118,7 @@ class SingleCompartmentNeuron(HHTypedNeuron):
 
     # integrate the membrane potential
     V = self.V.value + self.derivative(self.V.value, bst.environ.get('t'), x) * bst.environ.get_dt()
-    V += self.sum_delta_inputs(init=bu.Quantity(0., dim=bu.get_dim(V)))
+    V = self.sum_delta_inputs(init=V)
 
     # integrate dynamics of ion and ion channels
     for node in channels.values():

@@ -32,7 +32,7 @@ pip install dendritex --upgrade
 
 ## Documentation
 
-The official documentation is hosted on Read the Docs: [https://dendritex.readthedocs.io](https://dendritex.readthedocs.io)
+The official documentation is hosted on Read the Docs: [https://dendrite.readthedocs.io](https://dendrite.readthedocs.io)
 
 
 
