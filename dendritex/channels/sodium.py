@@ -5,6 +5,8 @@ This module implements voltage-dependent sodium channels.
 
 """
 
+from __future__ import annotations
+
 from typing import Union, Callable, Optional
 
 import brainstate as bst

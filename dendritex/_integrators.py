@@ -13,6 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 
+from __future__ import annotations
+
 import brainstate as bst
 import brainunit as bu
 import jax
@@ -35,7 +37,6 @@ class State4Integral(bst.ShortTermState):
 
 def tree_map(f, tree, *rest):
   return jax.tree.map(f, tree, *rest, is_leaf=lambda a: isinstance(a, bu.Quantity))
-
 
 
 def euler_step(target, t: jax.typing.ArrayLike, *args):

@@ -4,6 +4,8 @@
 This module implements hyperpolarization-activated cation channels.
 """
 
+from __future__ import annotations
+
 from typing import Union, Callable, Optional
 
 import brainstate as bst

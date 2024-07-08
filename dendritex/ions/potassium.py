@@ -14,10 +14,12 @@
 # ==============================================================================
 
 
+from __future__ import annotations
+
 from typing import Union, Callable, Optional
 
-import brainunit as bu
 import brainstate as bst
+import brainunit as bu
 
 from .._base import Ion, Channel, check_hierarchies
 
