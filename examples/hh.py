@@ -15,21 +15,24 @@
 
 import brainstate as bst
 import brainunit as bu
+import matplotlib.pyplot as plt
 
-import dendritex as den
+import dendritex as dx
+
+bst.environ.set(dt=0.01 * bu.ms)
 
 
-class HH(den.SingleCompartmentNeuron):
+class HH(dx.SingleCompartmentNeuron):
   def __init__(self, size):
     super().__init__(size)
 
-    self.na = den.SodiumFixed(size, E=-50. * bu.mV)
-    self.na.add_elem(den.INa_HH1952(size))
+    self.na = dx.SodiumFixed(size, E=50. * bu.mV)
+    self.na.add_elem(dx.INa_HH1952(size))
 
-    self.k = den.PotassiumFixed(size, E=-77. * bu.mV)
-    self.k.add_elem(den.IK_HH1952(size))
+    self.k = dx.PotassiumFixed(size, E=-77. * bu.mV)
+    self.k.add_elem(dx.IK_HH1952(size))
 
-    self.IL = den.IL(size, E=-54.387 * bu.mV, g_max=0.03 * bu.mS / bu.cm ** 2)
+    self.IL = dx.IL(size, E=-54.387 * bu.mV, g_max=0.03 * (bu.mS / bu.cm ** 2))
 
 
 hh = HH([1, 1])
@@ -37,10 +40,16 @@ hh.init_state()
 
 
 def step_fun(t):
-  with bst.environ.context(dt=0.1 * bu.ms):
-    den.rk4_step(hh, t, 0.001 * bu.nA)
+  # dx.euler_step(hh, t, 10 * bu.nA)
+  # dx.rk2_step(hh, t, 10 * bu.nA)
+  # dx.rk3_step(hh, t, 10 * bu.nA)
+  dx.rk4_step(hh, t, 10 * bu.nA)
   return hh.V.value
 
 
-vs = bst.transform.for_loop(step_fun, bu.math.arange(1000) * bu.ms)
-print(vs / bu.mV)
+times = bu.math.arange(10000) * bst.environ.get_dt()
+vs = bst.transform.for_loop(step_fun, times)
+
+plt.plot(times / bu.ms, bu.math.squeeze(vs / bu.mV))
+plt.show()
+

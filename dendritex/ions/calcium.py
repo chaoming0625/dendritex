@@ -131,7 +131,7 @@ class _CalciumDynamics(Calcium):
     check_hierarchies(type(self), *tuple(nodes))
     for node in nodes:
       node.update(V, ca_info)
-    self.C.value += self.derivative(self.C.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+    self.C.derivative = self.derivative(self.C.value, bst.environ.get('t'), V)
 
   def _reversal_potential(self, C):
     return self._constant * bu.math.log(self.C0 / C)

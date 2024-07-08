@@ -103,7 +103,7 @@ class IAHP_De1994(KCaChannel):
     return self.phi * (C2 / C3 - p) * C3 / bu.ms
 
   def update(self, V, Ca: IonInfo):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), Ca.C) * bst.environ.get_dt()
+    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), Ca.C)
 
   def current(self, V, Ca: IonInfo):
     return self.g_max * self.p.value * self.p.value * (Ca.E - V)

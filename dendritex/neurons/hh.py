@@ -118,13 +118,16 @@ class SingleCompartmentNeuron(HHTypedNeuron):
     check_hierarchies(self.__class__, **channels)
 
     # integrate the membrane potential
-    V = self.V.value + self.derivative(self.V.value, bst.environ.get('t'), x) * bst.environ.get_dt()
-    V = self.sum_delta_inputs(init=V)
+    self.V.derivative = self.derivative(self.V.value, bst.environ.get('t'), x)
+    # V = self.sum_delta_inputs(init=V)
 
     # integrate dynamics of ion and ion channels
     for node in channels.values():
       node(self.V.value)
-    self.V.value = V
+    # self.V.value = V
+
+  def update_state(self):
+    pass
 
   def get_spike(self, last_V):
     return bu.math.logical_and(last_V >= self.V_th, self.V.value < self.V_th)

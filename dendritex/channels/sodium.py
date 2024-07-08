@@ -105,8 +105,8 @@ class INa_p3q_markov(SodiumChannel):
     return self.phi * (self.f_q_alpha(V) * (1. - q) - self.f_q_beta(V) * q) / bu.ms
 
   def update(self, V, Na: IonInfo):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
-    self.q.value += self.dq(self.q.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), V)
+    self.q.derivative = self.dq(self.q.value, bst.environ.get('t'), V)
 
   def current(self, V, Na: IonInfo):
     return self.g_max * self.p.value ** 3 * self.q.value * (Na.E - V)

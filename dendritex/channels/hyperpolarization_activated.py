@@ -86,7 +86,7 @@ class Ih_HM1992(Channel):
     return self.phi * (self.f_p_inf(V) - p) / self.f_p_tau(V) / bu.ms
 
   def update(self, V):
-    self.p.value += self.derivative(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+    self.p.derivative = self.derivative(self.p.value, bst.environ.get('t'), V)
 
   def current(self, V):
     return self.g_max * self.p.value * (self.E - V)

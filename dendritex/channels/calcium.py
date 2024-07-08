@@ -117,7 +117,7 @@ class ICaN_IS2008(CalciumChannel):
     return self.phi * (phi_p - p) / p_inf / bu.ms
 
   def update(self, V, Ca):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get('dt')
+    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), V)
 
   def current(self, V, Ca):
     M = Ca.C / (Ca.C + 0.2 * bu.mM)
@@ -192,8 +192,8 @@ class _ICa_p2q_ss(CalciumChannel):
     return self.phi_q * (self.f_q_inf(V) - q) / self.f_q_tau(V) / bu.ms
 
   def update(self, V, Ca):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get('dt')
-    self.q.value += self.dq(self.q.value, bst.environ.get('t'), V) * bst.environ.get('dt')
+    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), V)
+    self.q.derivative = self.dq(self.q.value, bst.environ.get('t'), V)
 
   def current(self, V, Ca):
     return self.g_max * self.p.value * self.p.value * self.q.value * (Ca.E - V)
@@ -277,8 +277,8 @@ class _ICa_p2q_markov(CalciumChannel):
     return self.phi_q * (self.f_q_alpha(V) * (1 - q) - self.f_q_beta(V) * q) / bu.ms
 
   def update(self, V, Ca):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get('dt')
-    self.q.value += self.dq(self.q.value, bst.environ.get('t'), V) * bst.environ.get('dt')
+    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), V)
+    self.q.derivative = self.dq(self.q.value, bst.environ.get('t'), V)
 
   def current(self, V, Ca):
     return self.g_max * self.p.value * self.p.value * self.q.value * (Ca.E - V)
@@ -557,8 +557,8 @@ class ICaHT_HM1992(_ICa_p2q_ss):
       size,
       name=name,
       g_max=g_max,
-      phi_p=T_base_p ** ((T / bu.celsius - 24) / 10),
-      phi_q=T_base_q ** ((T / bu.celsius - 24) / 10),
+      phi_p=T_base_p ** ((T - 24) / 10),
+      phi_q=T_base_q ** ((T - 24) / 10),
       mode=mode
     )
 
@@ -651,8 +651,8 @@ class ICaHT_Re1993(_ICa_p2q_markov):
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
   ):
-    phi_p = T_base_p ** ((T / bu.celsius - 23.) / 10.) if phi_p is None else phi_p
-    phi_q = T_base_q ** ((T / bu.celsius - 23.) / 10.) if phi_q is None else phi_q
+    phi_p = T_base_p ** ((T - 23.) / 10.) if phi_p is None else phi_p
+    phi_q = T_base_q ** ((T - 23.) / 10.) if phi_q is None else phi_q
     super().__init__(
       size,
       name=name,
@@ -744,8 +744,8 @@ class ICaL_IS2008(_ICa_p2q_ss):
       size,
       name=name,
       g_max=g_max,
-      phi_p=T_base_p ** ((T / bu.celsius - 24) / 10),
-      phi_q=T_base_q ** ((T / bu.celsius - 24) / 10),
+      phi_p=T_base_p ** ((T - 24) / 10),
+      phi_q=T_base_q ** ((T - 24) / 10),
       mode=mode
     )
 

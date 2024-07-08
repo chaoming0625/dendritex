@@ -104,7 +104,7 @@ class _IK_p4_markov(PotassiumChannel):
     return self.phi * (self.f_p_alpha(V) * (1. - p) - self.f_p_beta(V) * p) / bu.ms
 
   def update(self, V, K: IonInfo):
-    self.p.value += self.derivative(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+    self.p.derivative = self.derivative(self.p.value, bst.environ.get('t'), V)
 
   def current(self, V, K: IonInfo):
     return self.g_max * self.p.value ** 4 * (K.E - V)
@@ -167,7 +167,7 @@ class IKDR_Ba2002(_IK_p4_markov):
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
   ):
-    phi = T_base ** ((T / bu.celsius - 36) / 10) if phi is None else phi
+    phi = T_base ** ((T - 36) / 10) if phi is None else phi
     super().__init__(
       size,
       name=name,
@@ -385,8 +385,8 @@ class _IKA_p4q_ss(PotassiumChannel):
     return self.phi_q * (self.f_q_inf(V) - q) / self.f_q_tau(V) / bu.ms
 
   def update(self, V, K: IonInfo):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
-    self.q.value += self.dq(self.q.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), V)
+    self.q.derivative = self.dq(self.q.value, bst.environ.get('t'), V)
 
   def current(self, V, K: IonInfo):
     return self.g_max * self.p.value ** 4 * self.q.value * (K.E - V)
@@ -666,8 +666,8 @@ class _IKK2_pq_ss(PotassiumChannel):
     return self.phi_q * (self.f_q_inf(V) - q) / self.f_q_tau(V)
 
   def update(self, V, K: IonInfo):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
-    self.q.value += self.dq(self.q.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), V)
+    self.q.derivative = self.dq(self.q.value, bst.environ.get('t'), V)
 
   def current(self, V, K: IonInfo):
     return self.g_max * self.p.value * self.q.value * (K.E - V)
@@ -938,7 +938,7 @@ class IKNI_Ya1989(PotassiumChannel):
     return self.phi_p * (self.f_p_inf(V) - p) / self.f_p_tau(V)
 
   def update(self, V, K: IonInfo):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+    self.p.derivative = self.dp(self.p.value, bst.environ.get('t'), V)
 
   def current(self, V, K: IonInfo):
     return self.g_max * self.p.value * (K.E - V)
