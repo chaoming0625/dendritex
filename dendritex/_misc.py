@@ -14,9 +14,13 @@
 # ==============================================================================
 
 
+import brainunit as bu
+
+
 def set_module_as(name: str):
   def decorator(module):
     module.__name__ = name
     return module
 
   return decorator
+

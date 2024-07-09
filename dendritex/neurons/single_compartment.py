@@ -20,14 +20,14 @@ from typing import Union, Optional, Callable
 import brainstate as bst
 import brainunit as bu
 
-from .._base import HHTypedNeuron, IonChannel, TreeNode, State4Integral
+from .._base import HHTypedNeuron, IonChannel, State4Integral
 
 __all__ = [
-  'PointHHNeuron',
+  'PointBased',
 ]
 
 
-class PointHHNeuron(HHTypedNeuron):
+class PointBased(HHTypedNeuron):
   r"""
   Base class to model conductance-based neuron group.
 
@@ -91,17 +91,12 @@ class PointHHNeuron(HHTypedNeuron):
   def init_state(self, batch_size=None):
     self.V = State4Integral(bst.init.param(self._V_initializer, self.varshape, batch_size))
     self.spike = bst.ShortTermState(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-    nodes = self.nodes(level=1, include_self=False).subset(IonChannel).values()
-    TreeNode.check_hierarchies(self.__class__, *nodes)
-    for channel in nodes:
-      channel.init_state(self.V.value, batch_size=batch_size)
+    super().init_state(batch_size)
 
   def reset_state(self, batch_size=None):
     self.V.value = bst.init.param(self._V_initializer, self.varshape, batch_size)
     self.spike.value = bst.init.param(bu.math.zeros, self.varshape, batch_size)
-    nodes = self.nodes(level=1, include_self=False).subset(IonChannel).values()
-    for channel in nodes:
-      channel.reset_state(self.V.value, batch_size=batch_size)
+    super().init_state(batch_size)
 
   def before_integral(self, *args):
     self._last_V = self.V.value

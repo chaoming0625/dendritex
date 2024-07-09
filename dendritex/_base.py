@@ -42,7 +42,7 @@ __all__ = [
 #
 # - DendriticDynamics
 #   - HHTypedNeuron
-#     - PointHHNeuron
+#     - PointBased
 #   - IonChannel
 #     - Ion
 #       - Calcium
@@ -138,7 +138,7 @@ class DendriticDynamics(bst.Dynamics):
 class Container(bst.mixin.Mixin):
   __module__ = 'dentritex'
 
-  _container_name : str
+  _container_name: str
 
   @staticmethod
   def _get_elem_name(elem):
@@ -264,6 +264,17 @@ class HHTypedNeuron(DendriticDynamics, Container):
 
     # attribute for ``Container``
     self.ion_channels = bst.visible_module_dict(self._format_elements(IonChannel, **ion_channels))
+
+  def init_state(self, batch_size=None):
+    nodes = self.nodes(level=1, include_self=False).subset(IonChannel).values()
+    TreeNode.check_hierarchies(self.__class__, *nodes)
+    for channel in nodes:
+      channel.init_state(self.V.value, batch_size=batch_size)
+
+  def reset_state(self, batch_size=None):
+    nodes = self.nodes(level=1, include_self=False).subset(IonChannel).values()
+    for channel in nodes:
+      channel.reset_state(self.V.value, batch_size=batch_size)
 
   def add_elem(self, *elems, **elements):
     """
