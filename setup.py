@@ -59,11 +59,11 @@ setup(
   packages=packages,
   python_requires='>=3.9',
   install_requires=['numpy>=1.15', 'jax'],
-  url='https://github.com/chaoming0625/pydendrite',
+  url='https://github.com/chaoming0625/dendritex',
   project_urls={
-    "Bug Tracker": "https://github.com/chaoming0625/pydendrite/issues",
-    "Documentation": "https://pydendrite.readthedocs.io/",
-    "Source Code": "https://github.com/chaoming0625/pydendrite",
+    "Bug Tracker": "https://github.com/chaoming0625/dendritex/issues",
+    "Documentation": "https://dendritex.readthedocs.io/",
+    "Source Code": "https://github.com/chaoming0625/dendritex",
   },
   extras_require={
     'cpu': ['jaxlib'],
