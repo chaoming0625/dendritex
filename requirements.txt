@@ -1,6 +1,3 @@
-numpy
-jax
-jaxlib
 brainunit
 brainstate
 

@@ -16,19 +16,25 @@
 
 __version__ = "0.0.1"
 
+from . import channels
+from . import ions
+# from .channels import *
+# from .channels import __all__ as _channels_all
+# from .ions import *
+# from .ions import __all__ as _ions_all
+# from .neurons import *
+# from .neurons import __all__ as _membranes_all
+from . import neurons
 from ._base import *
 from ._base import __all__ as _base_all
 from ._integrators import *
 from ._integrators import __all__ as _integrators_all
-from .channels import *
-from .channels import __all__ as _channels_all
-from .ions import *
-from .ions import __all__ as _ions_all
-from .neurons import *
-from .neurons import __all__ as _membranes_all
 
-__all__ = (_base_all +
-           _integrators_all +
-           _ions_all +
-           _channels_all +
-           _membranes_all)
+__all__ = (
+    ['neurons', 'ions', 'channels'] +
+    _base_all +
+    _integrators_all
+  # _ions_all +
+  # _channels_all +
+  # _membranes_all
+)
