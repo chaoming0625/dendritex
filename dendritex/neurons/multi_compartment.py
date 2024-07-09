@@ -14,7 +14,11 @@
 # ==============================================================================
 
 
-from .single_compartment import *
-from .single_compartment import __all__ as _single_comp_all
+from .._base import HHTypedNeuron, IonChannel, TreeNode
+from .._integrators import State4Integral
 
-__all__ = _single_comp_all
+
+class MultiCompartmentNeuron(HHTypedNeuron):
+  pass
+
+

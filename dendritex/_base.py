@@ -40,7 +40,7 @@ __all__ = [
 #
 # - DendriticDynamics
 #   - HHTypedNeuron
-#     - SingleCompartmentNeuron
+#     - PointHHNeuron
 #   - IonChannel
 #     - Ion
 #       - Calcium
@@ -216,7 +216,7 @@ class TreeNode(bst.mixin.Mixin):
 
 class HHTypedNeuron(DendriticDynamics, Container):
   """
-  The base class for the Hodgkin-Huxley typed neuronal dynamics.
+  The base class for the Hodgkin-Huxley typed neuronal membrane dynamics.
   """
 
   def __init__(
