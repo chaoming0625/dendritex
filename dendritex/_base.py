@@ -24,6 +24,8 @@ import brainstate as bst
 import numpy as np
 from brainstate.mixin import _JointGenericAlias
 
+from ._misc import set_module_as
+
 __all__ = [
   'DendriticDynamics',
   'State4Integral',
@@ -50,6 +52,7 @@ __all__ = [
 #     - Channel
 #
 
+
 class State4Integral(bst.ShortTermState):
   """
   A state that integrates the state of the system to the integral of the state.
@@ -59,6 +62,8 @@ class State4Integral(bst.ShortTermState):
   derivative: The derivative of the state.
 
   """
+
+  __module__ = 'dentritex'
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
@@ -75,6 +80,7 @@ class DendriticDynamics(bst.Dynamics):
     n_compartment: The number of compartments in each neuron.
     varshape: The shape of the state variables.
   """
+  __module__ = 'dentritex'
 
   def __init__(
       self,
@@ -130,6 +136,9 @@ class DendriticDynamics(bst.Dynamics):
 
 
 class Container(bst.mixin.Mixin):
+  __module__ = 'dentritex'
+
+  _container_name : str
 
   @staticmethod
   def _get_elem_name(elem):
@@ -169,6 +178,27 @@ class Container(bst.mixin.Mixin):
       res[k] = v
     return res
 
+  def __getitem__(self, item):
+    """Overwrite the slice access (`self['']`). """
+    children = self.__getattr__(self._container_name)
+    if item in children:
+      return children[item]
+    else:
+      raise ValueError(f'Unknown item {item}, we only found {list(children.keys())}')
+
+  def __getattr__(self, item):
+    """Overwrite the dot access (`self.`). """
+    name = super().__getattribute__('_container_name')
+    if item == '_container_name':
+      return name
+    children = super().__getattribute__(name)
+    if item == name:
+      return children
+    if item in children:
+      return children[item]
+    else:
+      return super().__getattribute__(item)
+
   def add_elem(self, *elems, **elements):
     """
     Add new elements.
@@ -180,6 +210,8 @@ class Container(bst.mixin.Mixin):
 
 
 class TreeNode(bst.mixin.Mixin):
+  __module__ = 'dentritex'
+
   root_type: type
 
   @staticmethod
@@ -218,6 +250,8 @@ class HHTypedNeuron(DendriticDynamics, Container):
   """
   The base class for the Hodgkin-Huxley typed neuronal membrane dynamics.
   """
+  __module__ = 'dentritex'
+  _container_name = 'ion_channels'
 
   def __init__(
       self,
@@ -243,6 +277,8 @@ class HHTypedNeuron(DendriticDynamics, Container):
 
 
 class IonChannel(DendriticDynamics, TreeNode):
+  __module__ = 'dentritex'
+
   def current(self, *args, **kwargs):
     raise NotImplementedError
 
@@ -274,6 +310,8 @@ class Ion(IonChannel, Container):
     size: The size of the simulation target.
     name: The name of the object.
   """
+  __module__ = 'dentritex'
+  _container_name = 'channels'
 
   # The type of the master object.
   root_type = HHTypedNeuron
@@ -381,8 +419,10 @@ class MixIons(IonChannel, Container):
   Args:
     ions: Instances of ions. This option defines the master types of all children objects.
   """
+  __module__ = 'dentritex'
 
   root_type = HHTypedNeuron
+  _container_name = 'channels'
 
   def __init__(
       self,
@@ -509,6 +549,7 @@ class MixIons(IonChannel, Container):
       )
 
 
+@set_module_as('dentritex')
 def mix_ions(*ions) -> MixIons:
   """Create mixed ions.
 
@@ -526,3 +567,4 @@ def mix_ions(*ions) -> MixIons:
 
 class Channel(IonChannel):
   """Base class for ion channels."""
+  __module__ = 'dentritex'
