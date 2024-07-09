@@ -23,11 +23,11 @@ import brainunit as bu
 from .._base import HHTypedNeuron, IonChannel, State4Integral
 
 __all__ = [
-  'PointBased',
+  'SingleCompartment',
 ]
 
 
-class PointBased(HHTypedNeuron):
+class SingleCompartment(HHTypedNeuron):
   r"""
   Base class to model conductance-based neuron group.
 

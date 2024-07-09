@@ -31,7 +31,7 @@ import dendritex as dx
 S = bu.mS / bu.cm ** 2
 
 
-class SingleCompartmentThalamusNeuron(dx.neurons.PointHHNeuron):
+class SingleCompartmentThalamusNeuron(dx.neurons.SingleCompartment):
   def step_run(self, t, inp):
     dx.rk4_step(self, t, inp)
     return self.V.value

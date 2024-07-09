@@ -42,7 +42,7 @@ __all__ = [
 #
 # - DendriticDynamics
 #   - HHTypedNeuron
-#     - PointBased
+#     - SingleCompartment
 #   - IonChannel
 #     - Ion
 #       - Calcium
