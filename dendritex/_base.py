@@ -185,14 +185,14 @@ class TreeNode(bst.mixin.Mixin):
   @staticmethod
   def _root_leaf_pair_check(root: type, leaf: 'TreeNode'):
     if hasattr(leaf, 'root_type'):
-      master_type = leaf.root_type
+      root_type = leaf.root_type
     else:
       raise ValueError('Child class should define "root_type" to '
                        'specify the type of the root node. '
                        f'But we did not found it in {leaf}')
-    if not issubclass(root, master_type):
-      raise TypeError(f'Type does not match. {leaf} requires a master with type '
-                      f'of {leaf.root_type}, but the master now is {root}.')
+    if not issubclass(root, root_type):
+      raise TypeError(f'Type does not match. {leaf} requires a root with type '
+                      f'of {leaf.root_type}, but the root now is {root}.')
 
   @staticmethod
   def check_hierarchies(root: type, *leaves, check_fun: Callable = None, **named_leaves):
@@ -238,6 +238,7 @@ class HHTypedNeuron(DendriticDynamics, Container):
     Args:
       elements: children objects.
     """
+    TreeNode.check_hierarchies(type(self), *elems, **elements)
     self.ion_channels.update(self._format_elements(object, *elems, **elements))
 
 
@@ -299,17 +300,17 @@ class Ion(IonChannel, Container):
   def before_integral(self, V):
     nodes = self.nodes(level=1, include_self=False).subset(Channel)
     for node in nodes.values():
-      node.before_integral(V, IonInfo(E=self.E, C=self.C))
+      node.before_integral(V, self.pack_info())
 
   def compute_derivative(self, V):
     nodes = self.nodes(level=1, include_self=False).subset(Channel)
     for node in nodes.values():
-      node.compute_derivative(V, IonInfo(E=self.E, C=self.C))
+      node.compute_derivative(V, self.pack_info())
 
   def after_integral(self, V):
     nodes = self.nodes(level=1, include_self=False).subset(Channel)
     for node in nodes.values():
-      node.after_integral(V, IonInfo(E=self.E, C=self.C))
+      node.after_integral(V, self.pack_info())
 
   def current(self, V, include_external: bool = False):
     """
@@ -323,9 +324,8 @@ class Ion(IonChannel, Container):
       Current.
     """
     nodes = tuple(self.nodes(level=1, include_self=False).subset(Channel).values())
-    self.check_hierarchies(type(self), *nodes)
 
-    ion_info = IonInfo(E=self.E, C=self.C)
+    ion_info = self.pack_info()
     current = None
     if len(nodes) > 0:
       for node in nodes:
@@ -348,7 +348,6 @@ class Ion(IonChannel, Container):
 
   def reset_state(self, V, batch_size: int = None):
     nodes = self.nodes(level=1, include_self=False).subset(Channel).values()
-    self.check_hierarchies(type(self), *tuple(nodes))
     ion_info = self.pack_info()
     for node in nodes:
       node: Channel
@@ -371,6 +370,7 @@ class Ion(IonChannel, Container):
     Args:
       elements: children objects.
     """
+    self.check_hierarchies(type(self), *elems, **elements)
     self.channels.update(self._format_elements(object, *elems, **elements))
 
 
@@ -409,21 +409,18 @@ class MixIons(IonChannel, Container):
 
   def before_integral(self, V):
     nodes = tuple(self.nodes(level=1, include_self=False).subset(Channel).values())
-    self.check_hierarchies(self._ion_types, *nodes, check_fun=self._check_hierarchy)
     for node in nodes:
       ion_infos = tuple([self._get_ion(ion).pack_info() for ion in node.root_type.__args__])
       node.before_integral(V, *ion_infos)
 
   def compute_derivative(self, V):
     nodes = tuple(self.nodes(level=1, include_self=False).subset(Channel).values())
-    self.check_hierarchies(self._ion_types, *nodes, check_fun=self._check_hierarchy)
     for node in nodes:
       ion_infos = tuple([self._get_ion(ion).pack_info() for ion in node.root_type.__args__])
       node.compute_derivative(V, *ion_infos)
 
   def after_integral(self, V):
     nodes = tuple(self.nodes(level=1, include_self=False).subset(Channel).values())
-    self.check_hierarchies(self._ion_types, *nodes, check_fun=self._check_hierarchy)
     for node in nodes:
       ion_infos = tuple([self._get_ion(ion).pack_info() for ion in node.root_type.__args__])
       node.after_integral(V, *ion_infos)
@@ -438,7 +435,6 @@ class MixIons(IonChannel, Container):
       Current.
     """
     nodes = tuple(self.nodes(level=1, include_self=False).subset(Channel).values())
-    self.check_hierarchies(self._ion_types, *nodes, check_fun=self._check_hierarchy)
 
     if len(nodes) == 0:
       return 0.
@@ -451,15 +447,14 @@ class MixIons(IonChannel, Container):
 
   def init_state(self, V, batch_size: int = None):
     nodes = self.nodes(level=1, include_self=False).subset(Channel).values()
-    self.check_hierarchies(type(self), *tuple(nodes))
+    self.check_hierarchies(self._ion_types, *tuple(nodes), check_fun=self._check_hierarchy)
     for node in nodes:
       node: Channel
       infos = tuple([self._get_ion(root).pack_info() for root in node.root_type.__args__])
-      node.reset_state(V, *infos, batch_size)
+      node.init_state(V, *infos, batch_size)
 
   def reset_state(self, V, batch_size=None):
     nodes = tuple(self.nodes(level=1, include_self=False).subset(Channel).values())
-    self.check_hierarchies(self._ion_types, *nodes, check_fun=self._check_hierarchy)
     for node in nodes:
       infos = tuple([self._get_ion(root).pack_info() for root in node.root_type.__args__])
       node.reset_state(V, *infos, batch_size)
@@ -529,5 +524,5 @@ def mix_ions(*ions) -> MixIons:
   return MixIons(*ions)
 
 
-class Channel(IonChannel, TreeNode):
+class Channel(IonChannel):
   """Base class for ion channels."""

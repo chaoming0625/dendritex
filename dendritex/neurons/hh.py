@@ -97,7 +97,7 @@ class SingleCompartmentNeuron(HHTypedNeuron):
 
   def init_state(self, batch_size=None):
     self.V = State4Integral(bst.init.param(self._V_initializer, self.varshape, batch_size))
-    # self.spike = bst.ShortTermState(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+    self.spike = bst.ShortTermState(bst.init.param(bu.math.zeros, self.varshape, batch_size))
     nodes = self.nodes(level=1, include_self=False).subset(IonChannel).values()
     TreeNode.check_hierarchies(self.__class__, *nodes)
     for channel in nodes:
@@ -105,36 +105,39 @@ class SingleCompartmentNeuron(HHTypedNeuron):
 
   def reset_state(self, batch_size=None):
     self.V.value = bst.init.param(self._V_initializer, self.varshape, batch_size)
-    # self.spike.value = bst.init.param(bu.math.zeros, self.varshape, batch_size)
+    self.spike.value = bst.init.param(bu.math.zeros, self.varshape, batch_size)
     nodes = self.nodes(level=1, include_self=False).subset(IonChannel).values()
-    TreeNode.check_hierarchies(self.__class__, *nodes)
     for channel in nodes:
       channel.reset_state(self.V.value, batch_size=batch_size)
 
-  def before_updates(self, *args):
-    pass
+  def before_integral(self, *args):
+    self._last_V = self.V.value
+
+    channels = self.nodes(level=1, include_self=False).subset(IonChannel)
+    for node in channels.values():
+      node.before_integral(self.V.value)
 
   def compute_derivative(self, x=0.):
     # inputs
     x = x * (1e-3 / self.A)
 
-    # check whether the children channels have the correct parents.
-    channels = self.nodes(level=1, include_self=False).subset(IonChannel)
-    TreeNode.check_hierarchies(self.__class__, **channels)
-
     # integrate the membrane potential
     self.V.derivative = self.derivative(self.V.value, bst.environ.get('t'), x)
 
     # integrate dynamics of ion and ion channels
+    # check whether the children channels have the correct parents.
+    channels = self.nodes(level=1, include_self=False).subset(IonChannel)
     for node in channels.values():
       node.compute_derivative(self.V.value)
 
   def after_integral(self, *args):
     self.V.value = self.sum_delta_inputs(init=self.V.value)
-    # self.spike.value = self.get_spike()
+    spike = bu.math.logical_and(self._last_V >= self.V_th, self.V.value < self.V_th)
+    self.spike.value = bu.math.asarray(spike, dtype=self.spike.value.dtype)
 
-  def get_spike(self, last_V):
-    return bu.math.logical_and(last_V >= self.V_th, self.V.value < self.V_th)
+    channels = self.nodes(level=1, include_self=False).subset(IonChannel)
+    for node in channels.values():
+      node.after_integral(self.V.value)
 
 
 class MultiCompartmentNeuron(HHTypedNeuron):

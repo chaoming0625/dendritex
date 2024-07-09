@@ -39,7 +39,7 @@ class HH(dx.SingleCompartmentNeuron):
     # dx.rk2_step(hh, t, 10 * bu.nA)
     # dx.rk3_step(hh, t, 10 * bu.nA)
     dx.rk4_step(self, t, 10 * bu.nA)
-    return hh.V.value
+    return self.V.value
 
 
 hh = HH([1, 1])

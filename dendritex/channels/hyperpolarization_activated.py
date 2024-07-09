@@ -87,7 +87,7 @@ class Ih_HM1992(Channel):
   def compute_derivative(self, V):
     self.p.derivative = self.phi * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V) / bu.ms
 
-  def after_integral(self):
+  def after_integral(self, V):
     pass
 
   def current(self, V):

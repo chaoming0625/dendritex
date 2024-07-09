@@ -67,8 +67,6 @@ class INa_p3q_markov(SodiumChannel):
   ----------
   g_max : float, ArrayType, Callable, Initializer
     The maximal conductance density (:math:`mS/cm^2`).
-  E : float, ArrayType, Callable, Initializer
-    The reversal potential (mV).
   phi : float, ArrayType, Callable, Initializer
     The temperature-dependent factor.
   name: str

@@ -107,7 +107,7 @@ class _CalciumDynamics(Calcium):
     # parameters
     self.C0 = bst.init.param(C0, self.varshape, allow_none=False)
     self.T = bst.init.param(T, self.varshape, allow_none=False)  # temperature
-    self._constant = bu.gas_constant / (2 * bu.faraday_constant) * (273.15 * bu.kelvin + self.T)
+    self._constant = bu.gas_constant / (2 * bu.faraday_constant) * (273.15 + self.T) * bu.kelvin
     self._C_initializer = C_initializer
 
   def derivative(self, C, t, V):
@@ -254,10 +254,10 @@ class CalciumDetailed(_CalciumDynamics):
       self,
       size: bst.typing.Size,
       T: Union[bst.typing.ArrayLike, Callable] = 36.,
-      d: Union[bst.typing.ArrayLike, Callable] = 1.,
-      C_rest: Union[bst.typing.ArrayLike, Callable] = 2.4e-4,
-      tau: Union[bst.typing.ArrayLike, Callable] = 5.,
-      C0: Union[bst.typing.ArrayLike, Callable] = 2.,
+      d: Union[bst.typing.ArrayLike, Callable] = 1. * bu.um,
+      C_rest: Union[bst.typing.ArrayLike, Callable] = 2.4e-4 * bu.mM,
+      tau: Union[bst.typing.ArrayLike, Callable] = 5. * bu.ms,
+      C0: Union[bst.typing.ArrayLike, Callable] = 2. * bu.mM,
       C_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Constant(2.4e-4 * bu.mM),
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
@@ -300,7 +300,7 @@ class CalciumFirstOrder(_CalciumDynamics):
       T: Union[bst.typing.ArrayLike, Callable] = 36.,
       alpha: Union[bst.typing.ArrayLike, Callable] = 0.13,
       beta: Union[bst.typing.ArrayLike, Callable] = 0.075,
-      C0: Union[bst.typing.ArrayLike, Callable] = 2.,
+      C0: Union[bst.typing.ArrayLike, Callable] = 2. * bu.mM,
       C_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Constant(2.4e-4 * bu.mM),
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,

@@ -371,23 +371,23 @@ class ICaT_HM1992(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1 + bu.math.exp(-(V + 59. - self.V_sh) / 6.2))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1 + bu.math.exp(-(V + 59.) / 6.2))
 
   def f_p_tau(self, V):
-    V = V / bu.mV
-    return 1. / (bu.math.exp(-(V + 132. - self.V_sh) / 16.7) +
-                 bu.math.exp((V + 16.8 - self.V_sh) / 18.2)) + 0.612
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (bu.math.exp(-(V + 132.) / 16.7) +
+                 bu.math.exp((V + 16.8) / 18.2)) + 0.612
 
   def f_q_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp((V + 83. - self.V_sh) / 4.0))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp((V + 83.) / 4.0))
 
   def f_q_tau(self, V):
-    V = V / bu.mV
-    return bu.math.where(V >= (-80. + self.V_sh),
-                         bu.math.exp(-(V + 22. - self.V_sh) / 10.5) + 28.,
-                         bu.math.exp((V + 467. - self.V_sh) / 66.6))
+    V = (V - self.V_sh) / bu.mV
+    return bu.math.where(V >= -80.,
+                         bu.math.exp(-(V + 22.) / 10.5) + 28.,
+                         bu.math.exp((V + 467.) / 66.6))
 
 
 class ICaT_HP1992(_ICa_p2q_ss):
@@ -471,22 +471,22 @@ class ICaT_HP1992(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp(-(V + 52. - self.V_sh) / 7.4))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp(-(V + 52.) / 7.4))
 
   def f_p_tau(self, V):
-    V = V / bu.mV
-    return 3. + 1. / (bu.math.exp((V + 27. - self.V_sh) / 10.) +
-                      bu.math.exp(-(V + 102. - self.V_sh) / 15.))
+    V = (V - self.V_sh) / bu.mV
+    return 3. + 1. / (bu.math.exp((V + 27.) / 10.) +
+                      bu.math.exp(-(V + 102.) / 15.))
 
   def f_q_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp((V + 80. - self.V_sh) / 5.))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp((V + 80.) / 5.))
 
   def f_q_tau(self, V):
-    V = V / bu.mV
-    return 85. + 1. / (bu.math.exp((V + 48. - self.V_sh) / 4.) +
-                       bu.math.exp(-(V + 407. - self.V_sh) / 50.))
+    V = (V - self.V_sh) / bu.mV
+    return 85. + 1. / (bu.math.exp((V + 48.) / 4.) +
+                       bu.math.exp(-(V + 407.) / 50.))
 
 
 class ICaHT_HM1992(_ICa_p2q_ss):
@@ -564,23 +564,23 @@ class ICaHT_HM1992(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp(-(V + 59. - self.V_sh) / 6.2))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp(-(V + 59.) / 6.2))
 
   def f_p_tau(self, V):
-    V = V / bu.mV
-    return 1. / (bu.math.exp(-(V + 132. - self.V_sh) / 16.7) +
-                 bu.math.exp((V + 16.8 - self.V_sh) / 18.2)) + 0.612
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (bu.math.exp(-(V + 132.) / 16.7) +
+                 bu.math.exp((V + 16.8) / 18.2)) + 0.612
 
   def f_q_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp((V + 83. - self.V_sh) / 4.))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp((V + 83.) / 4.))
 
   def f_q_tau(self, V):
-    V = V / bu.mV
-    return bu.math.where(V >= (-80. + self.V_sh),
-                         bu.math.exp(-(V + 22. - self.V_sh) / 10.5) + 28.,
-                         bu.math.exp((V + 467. - self.V_sh) / 66.6))
+    V = (V - self.V_sh) / bu.mV
+    return bu.math.where(V >= -80.,
+                         bu.math.exp(-(V + 22.) / 10.5) + 28.,
+                         bu.math.exp((V + 467.) / 66.6))
 
 
 class ICaHT_Re1993(_ICa_p2q_markov):
@@ -662,21 +662,21 @@ class ICaHT_Re1993(_ICa_p2q_markov):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_alpha(self, V):
-    V = V / bu.mV
-    temp = -27 - V + self.V_sh
+    V = (- V + self.V_sh) / bu.mV
+    temp = -27 + V
     return 0.055 * temp / (bu.math.exp(temp / 3.8) - 1)
 
   def f_p_beta(self, V):
-    V = V / bu.mV
-    return 0.94 * bu.math.exp((-75. - V + self.V_sh) / 17.)
+    V = (- V + self.V_sh) / bu.mV
+    return 0.94 * bu.math.exp((-75. + V) / 17.)
 
   def f_q_alpha(self, V):
-    V = V / bu.mV
-    return 0.000457 * bu.math.exp((-13. - V + self.V_sh) / 50.)
+    V = (- V + self.V_sh) / bu.mV
+    return 0.000457 * bu.math.exp((-13. + V) / 50.)
 
   def f_q_beta(self, V):
-    V = V / bu.mV
-    return 0.0065 / (bu.math.exp((-15. - V + self.V_sh) / 28.) + 1.)
+    V = (- V + self.V_sh) / bu.mV
+    return 0.0065 / (bu.math.exp((-15. + V) / 28.) + 1.)
 
 
 class ICaL_IS2008(_ICa_p2q_ss):
@@ -751,19 +751,17 @@ class ICaL_IS2008(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1 + bu.math.exp(-(V + 10. - self.V_sh) / 4.))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1 + bu.math.exp(-(V + 10.) / 4.))
 
   def f_p_tau(self, V):
-    V = V / bu.mV
-    return 0.4 + .7 / (bu.math.exp(-(V + 5. - self.V_sh) / 15.) +
-                       bu.math.exp((V + 5. - self.V_sh) / 15.))
+    V = (V - self.V_sh) / bu.mV
+    return 0.4 + .7 / (bu.math.exp(-(V + 5.) / 15.) + bu.math.exp((V + 5.) / 15.))
 
   def f_q_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp((V + 25. - self.V_sh) / 2.))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp((V + 25.) / 2.))
 
   def f_q_tau(self, V):
-    V = V / bu.mV
-    return 300. + 100. / (bu.math.exp((V + 40 - self.V_sh) / 9.5) +
-                          bu.math.exp(-(V + 40 - self.V_sh) / 9.5))
+    V = (V - self.V_sh) / bu.mV
+    return 300. + 100. / (bu.math.exp((V + 40) / 9.5) + bu.math.exp(-(V + 40) / 9.5))
