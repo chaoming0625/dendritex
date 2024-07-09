@@ -24,6 +24,7 @@ class LeakageChannel(Channel):
   """
   Base class for leakage channel dynamics.
   """
+  __module__ = 'dendritex.channels'
 
   root_type = HHTypedNeuron
 
@@ -56,6 +57,7 @@ class IL(LeakageChannel):
   E : float
     The reversal potential.
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,

@@ -14,9 +14,9 @@
 # ==============================================================================
 
 
-from .._base import HHTypedNeuron
+def set_module_as(name: str):
+  def decorator(module):
+    module.__name__ = name
+    return module
 
-
-class MultiCompartmentNeuron(HHTypedNeuron):
-  __module__ = 'dendritex.neurons'
-
+  return decorator

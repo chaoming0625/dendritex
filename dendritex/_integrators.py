@@ -20,6 +20,7 @@ import brainunit as bu
 import jax
 
 from ._base import State4Integral, DendriticDynamics
+from ._misc import set_module_as
 
 __all__ = [
   'euler_step',
@@ -33,6 +34,7 @@ def tree_map(f, tree, *rest):
   return jax.tree.map(f, tree, *rest, is_leaf=lambda a: isinstance(a, bu.Quantity))
 
 
+@set_module_as('dentritex')
 def euler_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
   dt = bst.environ.get_dt()
 
@@ -57,6 +59,7 @@ def euler_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
     target.after_integral(*args)
 
 
+@set_module_as('dentritex')
 def rk2_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
   dt = bst.environ.get_dt()
 
@@ -93,6 +96,7 @@ def rk2_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
     target.after_integral(*args)
 
 
+@set_module_as('dentritex')
 def rk3_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
   dt = bst.environ.get_dt()
 
@@ -149,6 +153,7 @@ def rk3_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
     target.after_integral(*args)
 
 
+@set_module_as('dentritex')
 def rk4_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
   dt = bst.environ.get_dt()
 

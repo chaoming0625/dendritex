@@ -65,6 +65,7 @@ class PointHHNeuron(HHTypedNeuron):
   name : optional, str
     The neuron group name.
   """
+  __module__ = 'dendritex.neurons'
 
   def __init__(
       self,

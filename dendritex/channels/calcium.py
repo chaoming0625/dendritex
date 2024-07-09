@@ -30,6 +30,8 @@ __all__ = [
 class CalciumChannel(Channel):
   """Base class for Calcium ion channels."""
 
+  __module__ = 'dendritex.channels'
+
   root_type = Calcium
 
   def before_integral(self, V, Ca: IonInfo):
@@ -87,8 +89,8 @@ class ICaN_IS2008(CalciumChannel):
          increase in the excitability of olfactory bulb interneurons.
          J Neurophysiol 99: 187–199.
   """
+  __module__ = 'dendritex.channels'
 
-  '''The type of the master object.'''
   root_type = Calcium
 
   def __init__(
@@ -339,6 +341,7 @@ class ICaT_HM1992(_ICa_p2q_ss):
   --------
   ICa_p2q_form
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -439,6 +442,7 @@ class ICaT_HP1992(_ICa_p2q_ss):
   --------
   ICa_p2q_form
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -536,6 +540,7 @@ class ICaHT_HM1992(_ICa_p2q_ss):
   --------
   ICa_p2q_form
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -632,6 +637,7 @@ class ICaHT_Re1993(_ICa_p2q_markov):
          Neuroscience 13.11 (1993): 4609-4621.
 
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -723,6 +729,7 @@ class ICaL_IS2008(_ICa_p2q_ss):
   --------
   ICa_p2q_form
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
