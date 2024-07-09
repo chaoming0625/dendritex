@@ -22,17 +22,17 @@ import dendritex as dx
 bst.environ.set(dt=0.01 * bu.ms)
 
 
-class HH(dx.SingleCompartmentNeuron):
+class HH(dx.neurons.SingleCompartmentNeuron):
   def __init__(self, size):
     super().__init__(size)
 
-    self.na = dx.SodiumFixed(size, E=50. * bu.mV)
-    self.na.add_elem(dx.INa_HH1952(size))
+    self.na = dx.ions.SodiumFixed(size, E=50. * bu.mV)
+    self.na.add_elem(dx.channels.INa_HH1952(size))
 
-    self.k = dx.PotassiumFixed(size, E=-77. * bu.mV)
-    self.k.add_elem(dx.IK_HH1952(size))
+    self.k = dx.ions.PotassiumFixed(size, E=-77. * bu.mV)
+    self.k.add_elem(dx.channels.IK_HH1952(size))
 
-    self.IL = dx.IL(size, E=-54.387 * bu.mV, g_max=0.03 * (bu.mS / bu.cm ** 2))
+    self.IL = dx.channels.IL(size, E=-54.387 * bu.mV, g_max=0.03 * (bu.mS / bu.cm ** 2))
 
   def step_fun(self, t):
     # dx.euler_step(hh, t, 10 * bu.nA)

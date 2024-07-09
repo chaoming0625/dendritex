@@ -97,7 +97,7 @@ class DendriticDynamics(bst.Dynamics):
       raise ValueError('size must be int, or a tuple/list of int.'
                        f'But we got {type(size)}')
     self.size = size
-    assert len(size) >= 2, 'The size of the dendritic dynamics should be at least 2D: (n_neuron, n_compartment).'
+    assert len(size) >= 1, 'The size of the dendritic dynamics should be at least 1D: (..., n_neuron, n_compartment).'
     self.pop_size: Tuple[int, ...] = size[:-1]
     self.n_compartment: int = size[-1]
 

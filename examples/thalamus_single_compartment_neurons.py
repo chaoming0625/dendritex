@@ -131,7 +131,8 @@ class TRN(SingleCompartmentThalamusNeuron):
 def try_trn_neuron():
   bst.environ.set(dt=0.01 * bu.ms)
 
-  trn = RTC([1, 1])  # [n_neuron, n_compartment]
+  # trn = RTC([1, 1])  # [n_neuron, n_compartment]
+  trn = RTC(1)  # [n_neuron, n_compartment]
   # trn = TRN([1, 1])  # [n_neuron, n_compartment]
   trn.init_state()
 
