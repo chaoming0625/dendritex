@@ -12,8 +12,7 @@ from typing import Union, Callable, Optional, Sequence
 import brainstate as bst
 import brainunit as bu
 
-from .._base import Channel, IonInfo
-from .._integrators import State4Integral
+from .._base import Channel, IonInfo, State4Integral
 from ..ions import Potassium
 
 __all__ = [
@@ -35,14 +34,23 @@ class PotassiumChannel(Channel):
 
   root_type = Potassium
 
-  def update(self, V, K: IonInfo):
-    raise NotImplementedError
+  def before_integral(self, V, K: IonInfo):
+    pass
+
+  def after_integral(self, V, K: IonInfo):
+    pass
+
+  def compute_derivative(self, V, K: IonInfo):
+    pass
 
   def current(self, V, K: IonInfo):
     raise NotImplementedError
 
+  def init_state(self, V, K: IonInfo, batch_size: int = None):
+    pass
+
   def reset_state(self, V, K: IonInfo, batch_size: int = None):
-    raise NotImplementedError('Must be implemented by the subclass.')
+    pass
 
 
 class _IK_p4_markov(PotassiumChannel):
@@ -100,11 +108,10 @@ class _IK_p4_markov(PotassiumChannel):
     if isinstance(batch_size, int):
       assert self.p.value.shape[0] == batch_size
 
-  def derivative(self, p, t, V):
-    return self.phi * (self.f_p_alpha(V) * (1. - p) - self.f_p_beta(V) * p) / bu.ms
-
-  def update(self, V, K: IonInfo):
-    self.p.value += self.derivative(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+  def compute_derivative(self, V, K: IonInfo):
+    p = self.p.value
+    dp = self.phi * (self.f_p_alpha(V) * (1. - p) - self.f_p_beta(V) * p) / bu.ms
+    self.p.derivative = dp
 
   def current(self, V, K: IonInfo):
     return self.g_max * self.p.value ** 4 * (K.E - V)
@@ -167,7 +174,7 @@ class IKDR_Ba2002(_IK_p4_markov):
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
   ):
-    phi = T_base ** ((T / bu.celsius - 36) / 10) if phi is None else phi
+    phi = T_base ** ((T - 36) / 10) if phi is None else phi
     super().__init__(
       size,
       name=name,
@@ -378,15 +385,9 @@ class _IKA_p4q_ss(PotassiumChannel):
     self.phi_p = bst.init.param(phi_p, self.varshape, allow_none=False)
     self.phi_q = bst.init.param(phi_q, self.varshape, allow_none=False)
 
-  def dp(self, p, t, V):
-    return self.phi_p * (self.f_p_inf(V) - p) / self.f_p_tau(V) / bu.ms
-
-  def dq(self, q, t, V):
-    return self.phi_q * (self.f_q_inf(V) - q) / self.f_q_tau(V) / bu.ms
-
-  def update(self, V, K: IonInfo):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
-    self.q.value += self.dq(self.q.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+  def compute_derivative(self, V, K: IonInfo):
+    self.p.derivative = self.phi_p * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V) / bu.ms
+    self.q.derivative = self.phi_q * (self.f_q_inf(V) - self.q.value) / self.f_q_tau(V) / bu.ms
 
   def current(self, V, K: IonInfo):
     return self.g_max * self.p.value ** 4 * self.q.value * (K.E - V)
@@ -659,15 +660,9 @@ class _IKK2_pq_ss(PotassiumChannel):
     self.phi_p = bst.init.param(phi_p, self.varshape, allow_none=False)
     self.phi_q = bst.init.param(phi_q, self.varshape, allow_none=False)
 
-  def dp(self, p, t, V):
-    return self.phi_p * (self.f_p_inf(V) - p) / self.f_p_tau(V)
-
-  def dq(self, q, t, V):
-    return self.phi_q * (self.f_q_inf(V) - q) / self.f_q_tau(V)
-
-  def update(self, V, K: IonInfo):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
-    self.q.value += self.dq(self.q.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+  def compute_derivative(self, V, K: IonInfo):
+    self.p.derivative = self.phi_p * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V)
+    self.q.derivative = self.phi_q * (self.f_q_inf(V) - self.q.value) / self.f_q_tau(V)
 
   def current(self, V, K: IonInfo):
     return self.g_max * self.p.value * self.q.value * (K.E - V)
@@ -934,11 +929,8 @@ class IKNI_Ya1989(PotassiumChannel):
     self.phi_p = bst.init.param(phi_p, self.varshape, allow_none=False)
     self.phi_q = bst.init.param(phi_q, self.varshape, allow_none=False)
 
-  def dp(self, p, t, V):
-    return self.phi_p * (self.f_p_inf(V) - p) / self.f_p_tau(V)
-
-  def update(self, V, K: IonInfo):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+  def compute_derivative(self, V, K: IonInfo):
+    self.p.derivative = self.phi_p * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V)
 
   def current(self, V, K: IonInfo):
     return self.g_max * self.p.value * (K.E - V)
@@ -989,7 +981,7 @@ class IK_Leak(PotassiumChannel):
   def reset_state(self, V, K: IonInfo, batch_size: int = None):
     pass
 
-  def update(self, V, K: IonInfo):
+  def compute_derivative(self, V, K: IonInfo):
     pass
 
   def current(self, V, K: IonInfo):

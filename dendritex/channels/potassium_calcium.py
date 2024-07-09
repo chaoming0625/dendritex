@@ -12,8 +12,7 @@ from typing import Union, Callable, Optional
 import brainstate as bst
 import brainunit as bu
 
-from .._base import IonInfo, Channel
-from .._integrators import State4Integral
+from .._base import IonInfo, Channel, State4Integral
 from ..ions import Calcium, Potassium
 
 __all__ = [
@@ -22,7 +21,25 @@ __all__ = [
 
 
 class KCaChannel(Channel):
-  pass
+  root_type = bst.mixin.JointTypes[Calcium, Potassium]
+
+  def before_integral(self, V, K: IonInfo, Ca: IonInfo):
+    pass
+
+  def after_integral(self, V, K: IonInfo, Ca: IonInfo):
+    pass
+
+  def compute_derivative(self, V, K: IonInfo, Ca: IonInfo):
+    pass
+
+  def current(self, V, K: IonInfo, Ca: IonInfo):
+    raise NotImplementedError
+
+  def init_state(self, V, K: IonInfo, Ca: IonInfo, batch_size: int = None):
+    pass
+
+  def reset_state(self, V, K: IonInfo, Ca: IonInfo, batch_size: int = None):
+    pass
 
 
 class IAHP_De1994(KCaChannel):
@@ -97,21 +114,18 @@ class IAHP_De1994(KCaChannel):
     self.beta = bst.init.param(beta, self.varshape, allow_none=False)
     self.phi = bst.init.param(phi, self.varshape, allow_none=False)
 
-  def dp(self, p, t, C_Ca):
-    C2 = self.alpha * bu.math.power(C_Ca / bu.mM, self.n)
+  def compute_derivative(self, V, K: IonInfo, Ca: IonInfo):
+    C2 = self.alpha * bu.math.power(Ca.C / bu.mM, self.n)
     C3 = C2 + self.beta
-    return self.phi * (C2 / C3 - p) * C3 / bu.ms
+    self.p.derivative = self.phi * (C2 / C3 - self.p.value) * C3 / bu.ms
 
-  def update(self, V, Ca: IonInfo):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), Ca.C) * bst.environ.get_dt()
-
-  def current(self, V, Ca: IonInfo):
+  def current(self, V, K: IonInfo, Ca: IonInfo):
     return self.g_max * self.p.value * self.p.value * (Ca.E - V)
 
-  def init_state(self, V, Ca: IonInfo, batch_size=None):
+  def init_state(self, V, K: IonInfo, Ca: IonInfo, batch_size=None):
     self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
 
-  def reset_state(self, V, Ca: IonInfo, batch_size=None):
+  def reset_state(self, V, K: IonInfo, Ca: IonInfo, batch_size=None):
     C2 = self.alpha * bu.math.power(Ca.C / bu.mM, self.n)
     C3 = C2 + self.beta
     if batch_size is None:

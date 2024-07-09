@@ -12,8 +12,7 @@ from typing import Union, Callable, Optional
 import brainstate as bst
 import brainunit as bu
 
-from .._base import Channel, IonInfo
-from .._integrators import State4Integral
+from .._base import Channel, IonInfo, State4Integral
 from ..ions import Sodium
 
 __all__ = [
@@ -29,14 +28,23 @@ class SodiumChannel(Channel):
 
   root_type = Sodium
 
-  def update(self, V, Na: IonInfo):
-    raise NotImplementedError
+  def before_integral(self, V, Na: IonInfo):
+    pass
+
+  def after_integral(self, V, Na: IonInfo):
+    pass
+
+  def compute_derivative(self, V, Na: IonInfo):
+    pass
 
   def current(self, V, Na: IonInfo):
     raise NotImplementedError
 
+  def init_state(self, V, Na: IonInfo, batch_size: int = None):
+    pass
+
   def reset_state(self, V, Na: IonInfo, batch_size: int = None):
-    raise NotImplementedError('Must be implemented by the subclass.')
+    pass
 
 
 class INa_p3q_markov(SodiumChannel):
@@ -59,8 +67,6 @@ class INa_p3q_markov(SodiumChannel):
   ----------
   g_max : float, ArrayType, Callable, Initializer
     The maximal conductance density (:math:`mS/cm^2`).
-  E : float, ArrayType, Callable, Initializer
-    The reversal potential (mV).
   phi : float, ArrayType, Callable, Initializer
     The temperature-dependent factor.
   name: str
@@ -98,15 +104,11 @@ class INa_p3q_markov(SodiumChannel):
     beta = self.f_q_beta(V)
     self.q.value = alpha / (alpha + beta)
 
-  def dp(self, p, t, V):
-    return self.phi * (self.f_p_alpha(V) * (1. - p) - self.f_p_beta(V) * p) / bu.ms
-
-  def dq(self, q, t, V):
-    return self.phi * (self.f_q_alpha(V) * (1. - q) - self.f_q_beta(V) * q) / bu.ms
-
-  def update(self, V, Na: IonInfo):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get_dt()
-    self.q.value += self.dq(self.q.value, bst.environ.get('t'), V) * bst.environ.get_dt()
+  def compute_derivative(self, V, Na: IonInfo):
+    p = self.p.value
+    q = self.q.value
+    self.p.derivative = self.phi * (self.f_p_alpha(V) * (1. - p) - self.f_p_beta(V) * p) / bu.ms
+    self.q.derivative = self.phi * (self.f_q_alpha(V) * (1. - q) - self.f_q_beta(V) * q) / bu.ms
 
   def current(self, V, Na: IonInfo):
     return self.g_max * self.p.value ** 3 * self.q.value * (Na.E - V)

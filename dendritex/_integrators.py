@@ -19,8 +19,9 @@ import brainstate as bst
 import brainunit as bu
 import jax
 
+from ._base import State4Integral, DendriticDynamics
+
 __all__ = [
-  'State4Integral',
   'euler_step',
   'rk2_step',
   'rk3_step',
@@ -28,126 +29,182 @@ __all__ = [
 ]
 
 
-class State4Integral(bst.ShortTermState):
-  """
-  A state that integrates the state of the system to the integral of the state.
-  """
-  pass
-
-
 def tree_map(f, tree, *rest):
   return jax.tree.map(f, tree, *rest, is_leaf=lambda a: isinstance(a, bu.Quantity))
 
 
-def euler_step(target, t: jax.typing.ArrayLike, *args):
+def euler_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
+  dt = bst.environ.get_dt()
+
   with bst.environ.context(t=t):
-    return target(*args)
+    with bst.StateTrace() as trace:
+      target.before_integral(*args)
+      target.compute_derivative(*args)
+
+      # state collection
+      states = tuple([st for st in trace.states if isinstance(st, State4Integral)])
+      # initial values
+      ys = list([val for st, val in zip(trace.states, trace._org_values) if isinstance(st, State4Integral)])
+      # derivatives
+      k1hs = [st.derivative for st in states]
+
+  # y + k1
+  with bst.check_state_value_tree():
+    # update states with derivatives
+    for st, y, k1h in zip(states, ys, k1hs):
+      st.value = tree_map(lambda y_, k1_: y_ + k1_ * dt, y, k1h)
+    # update other states
+    target.after_integral(*args)
 
 
-def rk2_step(target, t: jax.typing.ArrayLike, *args):
+def rk2_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
   dt = bst.environ.get_dt()
 
   # k1
   with bst.environ.context(t=t):
     with bst.StateTrace() as trace:
-      target(*args)
+      target.before_integral(*args)
+      target.compute_derivative(*args)
 
       # state collection
-      states = tuple(trace.states)
-      for st in states:
-        assert isinstance(st, State4Integral), f"Only State4Integral is supported currently: {st}"
-
-      # value collection
-      ys = list(trace._org_values)
-      k1hs = [st.value for st in states]
+      states = tuple([st for st in trace.states if isinstance(st, State4Integral)])
+      # initial values
+      ys = list([val for st, val in zip(trace.states, trace._org_values) if isinstance(st, State4Integral)])
+      # derivatives
+      k1hs = [st.derivative for st in states]
 
   # k2
   with bst.environ.context(t=t + dt):
-    for st, y, k1h in zip(states, ys, k1hs):
-      st.value = tree_map(lambda y_, k1_: y_ + k1_, y, k1h)
-    target(*args)
-    k2s = [st.value for st in states]
+    with bst.check_state_value_tree():
+      for st, y, k1h in zip(states, ys, k1hs):
+        st.value = tree_map(lambda y_, k1_: y_ + k1_ * dt, y, k1h)
+      # update other states
+      target.after_integral(*args)
+    target.before_integral(*args)
+    target.compute_derivative(*args)
+    k2s = [st.derivative for st in states]
 
   # y + (k1 + k2) / 2
-  for st, y, k1h, k2h in zip(states, ys, k1hs, k2s):
-    st.value = tree_map(lambda y_, k1_, k2_: y_ + 0.5 * (k1_ + k2_), y, k1h, k2h)
+  with bst.check_state_value_tree():
+    # update states with derivatives
+    for st, y, k1h, k2h in zip(states, ys, k1hs, k2s):
+      st.value = tree_map(lambda y_, k1_, k2_: y_ + 0.5 * (k1_ + k2_) * dt, y, k1h, k2h)
+    # update other states
+    target.after_integral(*args)
 
 
-def rk3_step(target, t: jax.typing.ArrayLike, *args):
+def rk3_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
   dt = bst.environ.get_dt()
 
   # k1
   with bst.environ.context(t=t):
     with bst.StateTrace() as trace:
-      target(*args)
+      target.before_integral(*args)
+      target.compute_derivative(*args)
 
       # state collection
-      states = tuple(trace.states)
-      for st in states:
-        assert isinstance(st, State4Integral), f"Only State4Integral is supported currently: {st}"
-
-      # value collection
-      ys = list(trace._org_values)
-      k1hs = [st.value for st in states]
+      states = tuple([st for st in trace.states if isinstance(st, State4Integral)])
+      # initial values
+      ys = list([val for st, val in zip(trace.states, trace._org_values) if isinstance(st, State4Integral)])
+      # derivatives
+      k1hs = [st.derivative for st in states]
 
   # k2
   with bst.environ.context(t=t + dt * 0.5):
-    for st, y, k1h in zip(states, ys, k1hs):
-      st.value = tree_map(lambda y_, k1_: y_ + k1_ * 0.5, y, k1h)
-    target(*args)
-    k2hs = [st.value for st in states]
+    with bst.check_state_value_tree():
+      for st, y, k1 in zip(states, ys, k1hs):
+        st.value = tree_map(
+          lambda y_, k1_: y_ + k1_ * 0.5 * dt,
+          y, k1
+        )
+      # update other states
+      target.after_integral(*args)
+    target.before_integral(*args)
+    target.compute_derivative(*args)
+    k2hs = [st.derivative for st in states]
 
   # k3
-  with bst.environ.context(t=t + dt * 0.5):
-    for st, y, k2h in zip(states, ys, k2hs):
-      st.value = tree_map(lambda y_, k2_: y_ + k2_ * 0.5, y, k2h)
-    target(*args)
-    k3hs = [st.value for st in states]
+  with bst.environ.context(t=t + dt):
+    with bst.check_state_value_tree():
+      for st, y, k2h, k1 in zip(states, ys, k2hs, k1hs):
+        st.value = tree_map(
+          lambda y_, k2_, k1_: y_ + (2.0 * k2_ - k1_) * dt,
+          y, k2h, k1
+        )
+      # update other states
+      target.after_integral(*args)
+    target.before_integral(*args)
+    target.compute_derivative(*args)
+    k3hs = [st.derivative for st in states]
 
   # y + (k1 + 4 * k2 + k3) / 2
-  for st, y, k1h, k2h, k3h in zip(states, ys, k1hs, k2hs, k3hs):
-    st.value = tree_map(lambda y_, k1_, k2_, k3_: y_ + (k1_ + 4 * k2_ + k3_) / 6, y, k1h, k2h, k3h)
+  with bst.check_state_value_tree():
+    # update states with derivatives
+    for st, y, k1, k2h, k3h in zip(states, ys, k1hs, k2hs, k3hs):
+      st.value = tree_map(
+        lambda y_, k1_, k2_, k3_: y_ + (k1_ + 4 * k2_ + k3_) / 6 * dt,
+        y, k1, k2h, k3h
+      )
+    # update other states
+    target.after_integral(*args)
 
 
-def rk4_step(target, t: jax.typing.ArrayLike, *args):
+def rk4_step(target: DendriticDynamics, t: jax.typing.ArrayLike, *args):
   dt = bst.environ.get_dt()
 
   # k1
   with bst.environ.context(t=t):
     with bst.StateTrace() as trace:
-      target(*args)
+      target.before_integral(*args)
+      target.compute_derivative(*args)
 
-    # state collection
-    states = tuple(trace.states)
-    for st in states:
-      assert isinstance(st, State4Integral), f"Only State4Integral is supported currently: {st}"
-
-    # value collection
-    ys = list(trace._org_values)
-    k1hs = [st.value for st in states]
+      # state collection
+      states = tuple([st for st in trace.states if isinstance(st, State4Integral)])
+      # initial values
+      ys = list([val for st, val in zip(trace.states, trace._org_values) if isinstance(st, State4Integral)])
+      # derivatives
+      k1hs = [st.derivative for st in states]
 
   # k2
   with bst.environ.context(t=t + 0.5 * dt):
-    for st, y, k1h in zip(states, ys, k1hs):
-      st.value = tree_map(lambda y_, k1_: y_ + 0.5 * k1_, y, k1h)
-    target(*args)
-    k2hs = [st.value for st in states]
+    with bst.check_state_value_tree():
+      for st, y, k1h in zip(states, ys, k1hs):
+        st.value = tree_map(lambda y_, k1_: y_ + 0.5 * k1_ * dt, y, k1h)
+      # update other states
+      target.after_integral(*args)
+    target.before_integral(*args)
+    target.compute_derivative(*args)
+    k2hs = [st.derivative for st in states]
 
   # k3
   with bst.environ.context(t=t + 0.5 * dt):
-    for st, y, k2h in zip(states, ys, k2hs):
-      st.value = tree_map(lambda y_, k2_: y_ + 0.5 * k2_, y, k2h)
-    target(*args)
-    k3hs = [st.value for st in states]
+    with bst.check_state_value_tree():
+      for st, y, k2h in zip(states, ys, k2hs):
+        st.value = tree_map(lambda y_, k2_: y_ + 0.5 * k2_ * dt, y, k2h)
+      # update other states
+      target.after_integral(*args)
+    target.before_integral(*args)
+    target.compute_derivative(*args)
+    k3hs = [st.derivative for st in states]
 
   # k4
   with bst.environ.context(t=t + dt):
-    for st, y, k3h in zip(states, ys, k3hs):
-      st.value = tree_map(lambda y_, k3_: y_ + k3_, y, k3h)
-    target(*args)
-    k4hs = [st.value for st in states]
+    with bst.check_state_value_tree():
+      for st, y, k3h in zip(states, ys, k3hs):
+        st.value = tree_map(lambda y_, k3_: y_ + k3_ * dt, y, k3h)
+      # update other states
+      target.after_integral(*args)
+    target.before_integral(*args)
+    target.compute_derivative(*args)
+    k4hs = [st.derivative for st in states]
 
   # y + (k1 + 2 * k2 + 2 * k3 + k4) / 6
-  for st, y, k1h, k2h, k3h, k4h in zip(states, ys, k1hs, k2hs, k3hs, k4hs):
-    st.value = tree_map(lambda y_, k1_, k2_, k3_, k4_: y_ + (k1_ + 2 * k2_ + 2 * k3_ + k4_) / 6,
-                        y, k1h, k2h, k3h, k4h)
+  with bst.check_state_value_tree():
+    # update states with derivatives
+    for st, y, k1h, k2h, k3h, k4h in zip(states, ys, k1hs, k2hs, k3hs, k4hs):
+      st.value = tree_map(
+        lambda y_, k1_, k2_, k3_, k4_: y_ + (k1_ + 2 * k2_ + 2 * k3_ + k4_) / 6 * dt,
+        y, k1h, k2h, k3h, k4h
+      )
+    # update other states
+    target.after_integral(*args)

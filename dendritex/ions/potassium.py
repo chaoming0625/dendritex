@@ -21,7 +21,7 @@ from typing import Union, Callable, Optional
 import brainstate as bst
 import brainunit as bu
 
-from .._base import Ion, Channel, check_hierarchies
+from .._base import Ion, Channel
 
 __all__ = [
   'Potassium',
@@ -61,7 +61,7 @@ class PotassiumFixed(Potassium):
 
   def reset_state(self, V, batch_size=None):
     nodes = self.nodes(level=1, include_self=False).subset(Channel).values()
-    check_hierarchies(type(self), *tuple(nodes))
+    self.check_hierarchies(type(self), *tuple(nodes))
     ion_info = self.pack_info()
     for node in nodes:
       node.reset_state(V, ion_info, batch_size)

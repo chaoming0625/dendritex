@@ -50,7 +50,7 @@ See also the BDP ecosystem
 
 - `brainscale <https://github.com/chaoming0625/brainscale>`_: The scalable online learning framework for biological neural networks.
 
-- `dendritex <https://github.com/chaoming0625/dendritex>`_: The dendritic modeling in JAx.
+- `dendritex <https://github.com/chaoming0625/dendritex>`_: The dendritic modeling in JAX.
 
 - `braintools <https://github.com/chaoming0625/braintools>`_: The toolbox for the brain dynamics simulation, training and analysis.
 

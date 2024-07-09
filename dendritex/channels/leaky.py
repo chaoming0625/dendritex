@@ -27,7 +27,22 @@ class LeakageChannel(Channel):
 
   root_type = HHTypedNeuron
 
-  def reset_state(self, V, batch_size=None):
+  def before_integral(self, V):
+    pass
+
+  def after_integral(self, V):
+    pass
+
+  def compute_derivative(self, V):
+    pass
+
+  def current(self, V):
+    raise NotImplementedError
+
+  def init_state(self, V, batch_size: int = None):
+    pass
+
+  def reset_state(self, V, batch_size: int = None):
     pass
 
 
@@ -58,12 +73,6 @@ class IL(LeakageChannel):
 
     self.E = bst.init.param(E, self.varshape, allow_none=False)
     self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
-
-  def reset_state(self, V, batch_size=None):
-    pass
-
-  def update(self, V):
-    pass
 
   def current(self, V):
     return self.g_max * (self.E - V)

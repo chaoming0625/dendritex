@@ -12,8 +12,7 @@ from typing import Union, Callable, Optional
 import brainstate as bst
 import brainunit as bu
 
-from .._base import Channel, IonInfo
-from .._integrators import State4Integral
+from .._base import Channel, IonInfo, State4Integral
 from ..ions import Calcium
 
 __all__ = [
@@ -33,14 +32,23 @@ class CalciumChannel(Channel):
 
   root_type = Calcium
 
-  def update(self, V, Ca):
+  def before_integral(self, V, Ca: IonInfo):
+    pass
+
+  def after_integral(self, V, Ca: IonInfo):
+    pass
+
+  def compute_derivative(self, V, Ca: IonInfo):
+    pass
+
+  def current(self, V, Ca: IonInfo):
     raise NotImplementedError
 
-  def current(self, V, Ca):
-    raise NotImplementedError
+  def init_state(self, V, Ca: IonInfo, batch_size: int = None):
+    pass
 
-  def reset_state(self, V, Ca, batch_size: int = None):
-    raise NotImplementedError('Must be implemented by the subclass.')
+  def reset_state(self, V, Ca: IonInfo, batch_size: int = None):
+    pass
 
 
 class ICaN_IS2008(CalciumChannel):
@@ -110,14 +118,11 @@ class ICaN_IS2008(CalciumChannel):
     V = V / bu.mV
     self.p.value = 1.0 / (1 + bu.math.exp(-(V + 43.) / 5.2))
 
-  def dp(self, p, t, V):
+  def compute_derivative(self, V, Ca):
     V = V / bu.mV
     phi_p = 1.0 / (1 + bu.math.exp(-(V + 43.) / 5.2))
     p_inf = 2.7 / (bu.math.exp(-(V + 55.) / 15.) + bu.math.exp((V + 55.) / 15.)) + 1.6
-    return self.phi * (phi_p - p) / p_inf / bu.ms
-
-  def update(self, V, Ca):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get('dt')
+    self.p.derivative = self.phi * (phi_p - self.p.value) / p_inf / bu.ms
 
   def current(self, V, Ca):
     M = Ca.C / (Ca.C + 0.2 * bu.mM)
@@ -185,15 +190,9 @@ class _ICa_p2q_ss(CalciumChannel):
       assert self.p.value.shape[0] == batch_size
       assert self.q.value.shape[0] == batch_size
 
-  def dp(self, p, t, V):
-    return self.phi_p * (self.f_p_inf(V) - p) / self.f_p_tau(V) / bu.ms
-
-  def dq(self, q, t, V):
-    return self.phi_q * (self.f_q_inf(V) - q) / self.f_q_tau(V) / bu.ms
-
-  def update(self, V, Ca):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get('dt')
-    self.q.value += self.dq(self.q.value, bst.environ.get('t'), V) * bst.environ.get('dt')
+  def compute_derivative(self, V, Ca):
+    self.p.derivative = self.phi_p * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V) / bu.ms
+    self.q.derivative = self.phi_q * (self.f_q_inf(V) - self.q.value) / self.f_q_tau(V) / bu.ms
 
   def current(self, V, Ca):
     return self.g_max * self.p.value * self.p.value * self.q.value * (Ca.E - V)
@@ -270,15 +269,11 @@ class _ICa_p2q_markov(CalciumChannel):
     alpha, beta = self.f_q_alpha(V), self.f_q_beta(V)
     self.q.value = alpha / (alpha + beta)
 
-  def dp(self, p, t, V):
-    return self.phi_p * (self.f_p_alpha(V) * (1 - p) - self.f_p_beta(V) * p) / bu.ms
-
-  def dq(self, q, t, V):
-    return self.phi_q * (self.f_q_alpha(V) * (1 - q) - self.f_q_beta(V) * q) / bu.ms
-
-  def update(self, V, Ca):
-    self.p.value += self.dp(self.p.value, bst.environ.get('t'), V) * bst.environ.get('dt')
-    self.q.value += self.dq(self.q.value, bst.environ.get('t'), V) * bst.environ.get('dt')
+  def compute_derivative(self, V, Ca):
+    p = self.p.value
+    q = self.q.value
+    self.p.derivative = self.phi_p * (self.f_p_alpha(V) * (1 - p) - self.f_p_beta(V) * p) / bu.ms
+    self.q.derivative = self.phi_q * (self.f_q_alpha(V) * (1 - q) - self.f_q_beta(V) * q) / bu.ms
 
   def current(self, V, Ca):
     return self.g_max * self.p.value * self.p.value * self.q.value * (Ca.E - V)
@@ -376,23 +371,23 @@ class ICaT_HM1992(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1 + bu.math.exp(-(V + 59. - self.V_sh) / 6.2))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1 + bu.math.exp(-(V + 59.) / 6.2))
 
   def f_p_tau(self, V):
-    V = V / bu.mV
-    return 1. / (bu.math.exp(-(V + 132. - self.V_sh) / 16.7) +
-                 bu.math.exp((V + 16.8 - self.V_sh) / 18.2)) + 0.612
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (bu.math.exp(-(V + 132.) / 16.7) +
+                 bu.math.exp((V + 16.8) / 18.2)) + 0.612
 
   def f_q_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp((V + 83. - self.V_sh) / 4.0))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp((V + 83.) / 4.0))
 
   def f_q_tau(self, V):
-    V = V / bu.mV
-    return bu.math.where(V >= (-80. + self.V_sh),
-                         bu.math.exp(-(V + 22. - self.V_sh) / 10.5) + 28.,
-                         bu.math.exp((V + 467. - self.V_sh) / 66.6))
+    V = (V - self.V_sh) / bu.mV
+    return bu.math.where(V >= -80.,
+                         bu.math.exp(-(V + 22.) / 10.5) + 28.,
+                         bu.math.exp((V + 467.) / 66.6))
 
 
 class ICaT_HP1992(_ICa_p2q_ss):
@@ -476,22 +471,22 @@ class ICaT_HP1992(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp(-(V + 52. - self.V_sh) / 7.4))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp(-(V + 52.) / 7.4))
 
   def f_p_tau(self, V):
-    V = V / bu.mV
-    return 3. + 1. / (bu.math.exp((V + 27. - self.V_sh) / 10.) +
-                      bu.math.exp(-(V + 102. - self.V_sh) / 15.))
+    V = (V - self.V_sh) / bu.mV
+    return 3. + 1. / (bu.math.exp((V + 27.) / 10.) +
+                      bu.math.exp(-(V + 102.) / 15.))
 
   def f_q_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp((V + 80. - self.V_sh) / 5.))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp((V + 80.) / 5.))
 
   def f_q_tau(self, V):
-    V = V / bu.mV
-    return 85. + 1. / (bu.math.exp((V + 48. - self.V_sh) / 4.) +
-                       bu.math.exp(-(V + 407. - self.V_sh) / 50.))
+    V = (V - self.V_sh) / bu.mV
+    return 85. + 1. / (bu.math.exp((V + 48.) / 4.) +
+                       bu.math.exp(-(V + 407.) / 50.))
 
 
 class ICaHT_HM1992(_ICa_p2q_ss):
@@ -557,8 +552,8 @@ class ICaHT_HM1992(_ICa_p2q_ss):
       size,
       name=name,
       g_max=g_max,
-      phi_p=T_base_p ** ((T / bu.celsius - 24) / 10),
-      phi_q=T_base_q ** ((T / bu.celsius - 24) / 10),
+      phi_p=T_base_p ** ((T - 24) / 10),
+      phi_q=T_base_q ** ((T - 24) / 10),
       mode=mode
     )
 
@@ -569,23 +564,23 @@ class ICaHT_HM1992(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp(-(V + 59. - self.V_sh) / 6.2))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp(-(V + 59.) / 6.2))
 
   def f_p_tau(self, V):
-    V = V / bu.mV
-    return 1. / (bu.math.exp(-(V + 132. - self.V_sh) / 16.7) +
-                 bu.math.exp((V + 16.8 - self.V_sh) / 18.2)) + 0.612
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (bu.math.exp(-(V + 132.) / 16.7) +
+                 bu.math.exp((V + 16.8) / 18.2)) + 0.612
 
   def f_q_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp((V + 83. - self.V_sh) / 4.))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp((V + 83.) / 4.))
 
   def f_q_tau(self, V):
-    V = V / bu.mV
-    return bu.math.where(V >= (-80. + self.V_sh),
-                         bu.math.exp(-(V + 22. - self.V_sh) / 10.5) + 28.,
-                         bu.math.exp((V + 467. - self.V_sh) / 66.6))
+    V = (V - self.V_sh) / bu.mV
+    return bu.math.where(V >= -80.,
+                         bu.math.exp(-(V + 22.) / 10.5) + 28.,
+                         bu.math.exp((V + 467.) / 66.6))
 
 
 class ICaHT_Re1993(_ICa_p2q_markov):
@@ -651,8 +646,8 @@ class ICaHT_Re1993(_ICa_p2q_markov):
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
   ):
-    phi_p = T_base_p ** ((T / bu.celsius - 23.) / 10.) if phi_p is None else phi_p
-    phi_q = T_base_q ** ((T / bu.celsius - 23.) / 10.) if phi_q is None else phi_q
+    phi_p = T_base_p ** ((T - 23.) / 10.) if phi_p is None else phi_p
+    phi_q = T_base_q ** ((T - 23.) / 10.) if phi_q is None else phi_q
     super().__init__(
       size,
       name=name,
@@ -667,21 +662,21 @@ class ICaHT_Re1993(_ICa_p2q_markov):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_alpha(self, V):
-    V = V / bu.mV
-    temp = -27 - V + self.V_sh
+    V = (- V + self.V_sh) / bu.mV
+    temp = -27 + V
     return 0.055 * temp / (bu.math.exp(temp / 3.8) - 1)
 
   def f_p_beta(self, V):
-    V = V / bu.mV
-    return 0.94 * bu.math.exp((-75. - V + self.V_sh) / 17.)
+    V = (- V + self.V_sh) / bu.mV
+    return 0.94 * bu.math.exp((-75. + V) / 17.)
 
   def f_q_alpha(self, V):
-    V = V / bu.mV
-    return 0.000457 * bu.math.exp((-13. - V + self.V_sh) / 50.)
+    V = (- V + self.V_sh) / bu.mV
+    return 0.000457 * bu.math.exp((-13. + V) / 50.)
 
   def f_q_beta(self, V):
-    V = V / bu.mV
-    return 0.0065 / (bu.math.exp((-15. - V + self.V_sh) / 28.) + 1.)
+    V = (- V + self.V_sh) / bu.mV
+    return 0.0065 / (bu.math.exp((-15. + V) / 28.) + 1.)
 
 
 class ICaL_IS2008(_ICa_p2q_ss):
@@ -744,8 +739,8 @@ class ICaL_IS2008(_ICa_p2q_ss):
       size,
       name=name,
       g_max=g_max,
-      phi_p=T_base_p ** ((T / bu.celsius - 24) / 10),
-      phi_q=T_base_q ** ((T / bu.celsius - 24) / 10),
+      phi_p=T_base_p ** ((T - 24) / 10),
+      phi_q=T_base_q ** ((T - 24) / 10),
       mode=mode
     )
 
@@ -756,19 +751,17 @@ class ICaL_IS2008(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1 + bu.math.exp(-(V + 10. - self.V_sh) / 4.))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1 + bu.math.exp(-(V + 10.) / 4.))
 
   def f_p_tau(self, V):
-    V = V / bu.mV
-    return 0.4 + .7 / (bu.math.exp(-(V + 5. - self.V_sh) / 15.) +
-                       bu.math.exp((V + 5. - self.V_sh) / 15.))
+    V = (V - self.V_sh) / bu.mV
+    return 0.4 + .7 / (bu.math.exp(-(V + 5.) / 15.) + bu.math.exp((V + 5.) / 15.))
 
   def f_q_inf(self, V):
-    V = V / bu.mV
-    return 1. / (1. + bu.math.exp((V + 25. - self.V_sh) / 2.))
+    V = (V - self.V_sh) / bu.mV
+    return 1. / (1. + bu.math.exp((V + 25.) / 2.))
 
   def f_q_tau(self, V):
-    V = V / bu.mV
-    return 300. + 100. / (bu.math.exp((V + 40 - self.V_sh) / 9.5) +
-                          bu.math.exp(-(V + 40 - self.V_sh) / 9.5))
+    V = (V - self.V_sh) / bu.mV
+    return 300. + 100. / (bu.math.exp((V + 40) / 9.5) + bu.math.exp(-(V + 40) / 9.5))
