@@ -15,24 +15,15 @@ Base Classes
    :template: classtemplate.rst
 
     HHTypedNeuron
+    State4Integral
     IonChannel
     Ion
+    IonInfo
     MixIons
     Channel
 
 
-Helper Classes
---------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-   :template: classtemplate.rst
-
-    IonInfo
-
-
-Integrator Methods
+Integration Methods
 --------------------
 
 .. autosummary::
@@ -40,7 +31,6 @@ Integrator Methods
    :nosignatures:
    :template: classtemplate.rst
 
-    State4Integral
     euler_step
     rk2_step
     rk3_step

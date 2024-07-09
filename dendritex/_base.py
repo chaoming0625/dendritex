@@ -288,6 +288,22 @@ class HHTypedNeuron(DendriticDynamics, Container):
 
 
 class IonChannel(DendriticDynamics, TreeNode):
+  """
+  The base class for ion channel modeling.
+
+  :py:class:`IonChannel` can be used to model the dynamics of an ion (instance of :py:class:`Ion`), or
+  a mixture of ions (instance of :py:class:`MixIons`), or a channel (instance of :py:class:`Channel`).
+
+  Particularly, an implementation of a :py:class:`IonChannel` should implement the following methods:
+
+  - :py:meth:`current`: Calculate the current of the ion channel.
+  - :py:meth:`before_integral`: Calculate the state variables before the integral.
+  - :py:meth:`compute_derivative`: Calculate the derivative of the state variables.
+  - :py:meth:`after_integral`: Calculate the state variables after the integral.
+  - :py:meth:`init_state`: Initialize the state variables.
+  - :py:meth:`reset_state`: Reset the state variables.
+
+  """
   __module__ = 'dentritex'
 
   def current(self, *args, **kwargs):
@@ -315,7 +331,8 @@ class IonInfo(NamedTuple):
 
 
 class Ion(IonChannel, Container):
-  """The brainpy_object calcium dynamics.
+  """
+  The base class for modeling the Ion dynamics.
 
   Args:
     size: The size of the simulation target.
@@ -577,5 +594,7 @@ def mix_ions(*ions) -> MixIons:
 
 
 class Channel(IonChannel):
-  """Base class for ion channels."""
+  """
+  The base class for modeling channel dynamics.
+  """
   __module__ = 'dentritex'
