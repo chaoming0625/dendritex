@@ -31,7 +31,7 @@ __all__ = [
 
 class Potassium(Ion):
   """Base class for modeling Potassium ion."""
-  pass
+  __module__ = 'dendritex.ions'
 
 
 class PotassiumFixed(Potassium):
@@ -40,6 +40,7 @@ class PotassiumFixed(Potassium):
   This calcium model has no dynamics. It holds fixed reversal
   potential :math:`E` and concentration :math:`C`.
   """
+  __module__ = 'dendritex.ions'
 
   def __init__(
       self,

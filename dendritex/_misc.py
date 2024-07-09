@@ -14,18 +14,13 @@
 # ==============================================================================
 
 
-__version__ = "0.0.1"
+import brainunit as bu
 
-from . import channels
-from . import ions
-from . import neurons
-from ._base import *
-from ._base import __all__ as _base_all
-from ._integrators import *
-from ._integrators import __all__ as _integrators_all
 
-__all__ = (
-    ['neurons', 'ions', 'channels'] +
-    _base_all +
-    _integrators_all
-)
+def set_module_as(name: str):
+  def decorator(module):
+    module.__name__ = name
+    return module
+
+  return decorator
+

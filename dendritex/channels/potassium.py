@@ -31,6 +31,7 @@ __all__ = [
 
 class PotassiumChannel(Channel):
   """Base class for sodium channel dynamics."""
+  __module__ = 'dendritex.channels'
 
   root_type = Potassium
 
@@ -162,6 +163,7 @@ class IKDR_Ba2002(_IK_p4_markov):
          and transitions to activated states." Journal of neuroscience 22.19 (2002): 8691-8704.
 
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -233,6 +235,7 @@ class IK_TM1991(_IK_p4_markov):
   --------
   INa_TM1991
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -297,6 +300,7 @@ class IK_HH1952(_IK_p4_markov):
   --------
   INa_HH1952
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -463,6 +467,7 @@ class IKA1_HM1992(_IKA_p4q_ss):
   --------
   IKA2_HM1992
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -556,6 +561,7 @@ class IKA2_HM1992(_IKA_p4q_ss):
   --------
   IKA1_HM1992
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -734,6 +740,7 @@ class IKK2A_HM1992(_IKK2_pq_ss):
          neurons." Journal of neurophysiology 66.4 (1991): 1316-1328.
 
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -821,6 +828,7 @@ class IKK2B_HM1992(_IKK2_pq_ss):
          neurons." Journal of neurophysiology 66.4 (1991): 1316-1328.
 
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -904,6 +912,7 @@ class IKNI_Ya1989(PotassiumChannel):
   .. [1] Yamada, Walter M. "Multiple channels and calcium dynamics." Methods in neuronal modeling (1989): 97-133.
 
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -962,6 +971,8 @@ class IK_Leak(PotassiumChannel):
     The potassium leakage conductance which is modulated by both
     acetylcholine and norepinephrine.
   """
+  __module__ = 'dendritex.channels'
+
   root_type = Potassium
 
   def __init__(

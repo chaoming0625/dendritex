@@ -20,16 +20,14 @@ from typing import Union, Optional, Callable
 import brainstate as bst
 import brainunit as bu
 
-from .._base import HHTypedNeuron, IonChannel, TreeNode
-from .._integrators import State4Integral
+from .._base import HHTypedNeuron, IonChannel, State4Integral
 
 __all__ = [
-  'SingleCompartmentNeuron',
-  'MultiCompartmentNeuron',
+  'SingleCompartment',
 ]
 
 
-class SingleCompartmentNeuron(HHTypedNeuron):
+class SingleCompartment(HHTypedNeuron):
   r"""
   Base class to model conductance-based neuron group.
 
@@ -67,6 +65,7 @@ class SingleCompartmentNeuron(HHTypedNeuron):
   name : optional, str
     The neuron group name.
   """
+  __module__ = 'dendritex.neurons'
 
   def __init__(
       self,
@@ -82,33 +81,22 @@ class SingleCompartmentNeuron(HHTypedNeuron):
     super().__init__(size, mode=mode, name=name, **ion_channels)
 
     # parameters for neurons
+    assert self.n_compartment == 1, (f'Point-based neuron only supports single compartment. '
+                                     f'But got {self.n_compartment} compartments.')
     self.C = C
     self.A = A
     self.V_th = V_th
     self._V_initializer = V_initializer
 
-  def derivative(self, V, t, I):
-    # synapses
-    I = self.sum_current_inputs(V, init=I)
-    # channels
-    for ch in self.nodes(level=1, include_self=False).subset(IonChannel).unique().values():
-      I = I + ch.current(V)
-    return I / self.C
-
   def init_state(self, batch_size=None):
     self.V = State4Integral(bst.init.param(self._V_initializer, self.varshape, batch_size))
     self.spike = bst.ShortTermState(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-    nodes = self.nodes(level=1, include_self=False).subset(IonChannel).values()
-    TreeNode.check_hierarchies(self.__class__, *nodes)
-    for channel in nodes:
-      channel.init_state(self.V.value, batch_size=batch_size)
+    super().init_state(batch_size)
 
   def reset_state(self, batch_size=None):
     self.V.value = bst.init.param(self._V_initializer, self.varshape, batch_size)
     self.spike.value = bst.init.param(bu.math.zeros, self.varshape, batch_size)
-    nodes = self.nodes(level=1, include_self=False).subset(IonChannel).values()
-    for channel in nodes:
-      channel.reset_state(self.V.value, batch_size=batch_size)
+    super().init_state(batch_size)
 
   def before_integral(self, *args):
     self._last_V = self.V.value
@@ -118,13 +106,18 @@ class SingleCompartmentNeuron(HHTypedNeuron):
       node.before_integral(self.V.value)
 
   def compute_derivative(self, x=0.):
-    # inputs
+    # [ Compute the derivative of membrane potential ]
+    # 1. inputs
     x = x * (1e-3 / self.A)
+    # 2. synapses
+    x = self.sum_current_inputs(self.V.value, init=x)
+    # 3. channels
+    for ch in self.nodes(level=1, include_self=False).subset(IonChannel).values():
+      x = x + ch.current(self.V.value)
+    # 4. derivatives
+    self.V.derivative = x / self.C
 
-    # integrate the membrane potential
-    self.V.derivative = self.derivative(self.V.value, bst.environ.get('t'), x)
-
-    # integrate dynamics of ion and ion channels
+    # [ integrate dynamics of ion and ion channels ]
     # check whether the children channels have the correct parents.
     channels = self.nodes(level=1, include_self=False).subset(IonChannel)
     for node in channels.values():
@@ -138,7 +131,3 @@ class SingleCompartmentNeuron(HHTypedNeuron):
     channels = self.nodes(level=1, include_self=False).subset(IonChannel)
     for node in channels.values():
       node.after_integral(self.V.value)
-
-
-class MultiCompartmentNeuron(HHTypedNeuron):
-  pass

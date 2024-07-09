@@ -52,6 +52,7 @@ class Ih_HM1992(Channel):
          of neurophysiology 68, no. 4 (1992): 1373-1383.
 
   """
+  __module__ = 'dendritex.channels'
 
   root_type = HHTypedNeuron
 

@@ -25,6 +25,7 @@ __all__ = [
 
 class SodiumChannel(Channel):
   """Base class for sodium channel dynamics."""
+  __module__ = 'dendritex.channels'
 
   root_type = Sodium
 
@@ -167,6 +168,7 @@ class INa_Ba2002(INa_p3q_markov):
   --------
   INa_TM1991
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -249,6 +251,7 @@ class INa_TM1991(INa_p3q_markov):
   --------
   INa_Ba2002
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,
@@ -331,6 +334,7 @@ class INa_HH1952(INa_p3q_markov):
   --------
   IK_HH1952
   """
+  __module__ = 'dendritex.channels'
 
   def __init__(
       self,

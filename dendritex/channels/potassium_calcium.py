@@ -21,6 +21,8 @@ __all__ = [
 
 
 class KCaChannel(Channel):
+  __module__ = 'dendritex.channels'
+
   root_type = bst.mixin.JointTypes[Calcium, Potassium]
 
   def before_integral(self, V, K: IonInfo, Ca: IonInfo):
@@ -87,6 +89,7 @@ class IAHP_De1994(KCaChannel):
          thalamic reticular nucleus." Journal of neurophysiology 72.2 (1994): 803-818.
 
   """
+  __module__ = 'dendritex.channels'
 
   root_type = bst.mixin.JointTypes[Calcium, Potassium]
 

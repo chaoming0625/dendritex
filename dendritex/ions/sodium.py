@@ -30,7 +30,7 @@ __all__ = [
 
 class Sodium(Ion):
   """Base class for modeling Sodium ion."""
-  pass
+  __module__ = 'dendritex.ions'
 
 
 class SodiumFixed(Sodium):
@@ -40,6 +40,7 @@ class SodiumFixed(Sodium):
   This calcium model has no dynamics. It holds fixed reversal
   potential :math:`E` and concentration :math:`C`.
   """
+  __module__ = 'dendritex.ions'
 
   def __init__(
       self,

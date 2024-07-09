@@ -22,7 +22,7 @@ import dendritex as dx
 bst.environ.set(dt=0.01 * bu.ms)
 
 
-class HH(dx.neurons.SingleCompartmentNeuron):
+class HH(dx.neurons.SingleCompartment):
   def __init__(self, size):
     super().__init__(size)
 
