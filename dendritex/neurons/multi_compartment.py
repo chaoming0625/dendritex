@@ -19,6 +19,7 @@ from typing import Union, Optional, Callable, Sequence, Tuple
 
 import brainstate as bst
 import brainunit as bu
+import jax
 import numpy as np
 
 from .._base import HHTypedNeuron, State4Integral, IonChannel
@@ -71,7 +72,6 @@ def diffusive_coupling(potentials, coo_ids, resistances):
 
 
 def init_coupling_weight(n_compartment, connection, diam, L, Ra):
-  connection = np.asarray(connection)
   # weights = []
   # for i, j in connection:
   #   # R_{i,j}=\frac{R_{i}+R_{j}}{2}
@@ -81,22 +81,23 @@ def init_coupling_weight(n_compartment, connection, diam, L, Ra):
   #   weights.append(R_ij)
   # return bu.Quantity(weights)
 
+  assert isinstance(connection, (np.ndarray, jax.Array)), 'The connection should be a numpy/jax array.'
   pre_ids = connection[:, 0]
   post_ids = connection[:, 1]
   if Ra.size == 1:
     Ra_pre = Ra
     Ra_post = Ra
   else:
-    assert Ra.shape[
-             -1] == n_compartment, f'The length of Ra should be equal to the number of compartments. Got {Ra.shape}.'
+    assert Ra.shape[-1] == n_compartment, (f'The length of Ra should be equal to '
+                                           f'the number of compartments. Got {Ra.shape}.')
     Ra_pre = Ra[..., pre_ids]
     Ra_post = Ra[..., post_ids]
   if L.size == 1:
     L_pre = L
     L_post = L
   else:
-    assert L.shape[
-             -1] == n_compartment, f'The length of L should be equal to the number of compartments. Got {L.shape}.'
+    assert L.shape[-1] == n_compartment, (f'The length of L should be equal to '
+                                          f'the number of compartments. Got {L.shape}.')
     L_pre = L[..., pre_ids]
     L_post = L[..., post_ids]
   if diam.size == 1:

@@ -64,6 +64,7 @@ See also the BDP ecosystem
 
    apis/changelog.md
    apis/dendritex.rst
+   apis/dendritex.neurons.rst
    apis/dendritex.ions.rst
    apis/dendritex.channels.rst
 
