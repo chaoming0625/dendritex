@@ -190,21 +190,21 @@ class INa_Ba2002(INa_p3q_markov):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_alpha(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     temp = V - 13.
     return 0.32 * temp / (1. - bu.math.exp(-temp / 4.))
 
   def f_p_beta(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     temp = V - 40.
     return -0.28 * temp / (1. - bu.math.exp(temp / 5.))
 
   def f_q_alpha(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 0.128 * bu.math.exp(-(V - 17.) / 18.)
 
   def f_q_beta(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 4. / (1. + bu.math.exp(-(V - 40.) / 5.))
 
 
@@ -272,21 +272,21 @@ class INa_TM1991(INa_p3q_markov):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_alpha(self, V):
-    V = (self.V_sh - V) / bu.mV
+    V = (self.V_sh - V).to_decimal(bu.mV)
     temp = 13 + V
     return 0.32 * temp / (bu.math.exp(temp / 4) - 1.)
 
   def f_p_beta(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     temp = V - 40
     return 0.28 * temp / (bu.math.exp(temp / 5) - 1)
 
   def f_q_alpha(self, V):
-    V = (- V + self.V_sh) / bu.mV
+    V = (- V + self.V_sh).to_decimal(bu.mV)
     return 0.128 * bu.math.exp((17 + V) / 18)
 
   def f_q_beta(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 4. / (1 + bu.math.exp(-(V - 40) / 5))
 
 
@@ -355,17 +355,17 @@ class INa_HH1952(INa_p3q_markov):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_alpha(self, V):
-    temp = (V - self.V_sh) / bu.mV - 5
+    temp = (V - self.V_sh).to_decimal(bu.mV) - 5
     return 0.1 * temp / (1 - bu.math.exp(-temp / 10))
 
   def f_p_beta(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 4.0 * bu.math.exp(-(V + 20) / 18)
 
   def f_q_alpha(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 0.07 * bu.math.exp(-(V + 20) / 20.)
 
   def f_q_beta(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1 / (1 + bu.math.exp(-(V - 10) / 10))

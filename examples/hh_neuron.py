@@ -48,5 +48,5 @@ hh.init_state()
 times = bu.math.arange(10000) * bst.environ.get_dt()
 vs = bst.transform.for_loop(hh.step_fun, times)
 
-plt.plot(times / bu.ms, bu.math.squeeze(vs / bu.mV))
+plt.plot(times.to_decimal(bu.ms), bu.math.squeeze(vs.to_decimal(bu.mV)))
 plt.show()

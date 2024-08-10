@@ -117,11 +117,11 @@ class ICaN_IS2008(CalciumChannel):
     self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
 
   def reset_state(self, V, Ca, batch_size=None):
-    V = V / bu.mV
+    V = V.to_decimal(bu.mV)
     self.p.value = 1.0 / (1 + bu.math.exp(-(V + 43.) / 5.2))
 
   def compute_derivative(self, V, Ca):
-    V = V / bu.mV
+    V = V.to_decimal(bu.mV)
     phi_p = 1.0 / (1 + bu.math.exp(-(V + 43.) / 5.2))
     p_inf = 2.7 / (bu.math.exp(-(V + 55.) / 15.) + bu.math.exp((V + 55.) / 15.)) + 1.6
     self.p.derivative = self.phi * (phi_p - self.p.value) / p_inf / bu.ms
@@ -374,20 +374,20 @@ class ICaT_HM1992(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1 + bu.math.exp(-(V + 59.) / 6.2))
 
   def f_p_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (bu.math.exp(-(V + 132.) / 16.7) +
                  bu.math.exp((V + 16.8) / 18.2)) + 0.612
 
   def f_q_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp((V + 83.) / 4.0))
 
   def f_q_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return bu.math.where(V >= -80.,
                          bu.math.exp(-(V + 22.) / 10.5) + 28.,
                          bu.math.exp((V + 467.) / 66.6))
@@ -475,20 +475,20 @@ class ICaT_HP1992(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp(-(V + 52.) / 7.4))
 
   def f_p_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 3. + 1. / (bu.math.exp((V + 27.) / 10.) +
                       bu.math.exp(-(V + 102.) / 15.))
 
   def f_q_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp((V + 80.) / 5.))
 
   def f_q_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 85. + 1. / (bu.math.exp((V + 48.) / 4.) +
                        bu.math.exp(-(V + 407.) / 50.))
 
@@ -569,20 +569,20 @@ class ICaHT_HM1992(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp(-(V + 59.) / 6.2))
 
   def f_p_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (bu.math.exp(-(V + 132.) / 16.7) +
                  bu.math.exp((V + 16.8) / 18.2)) + 0.612
 
   def f_q_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp((V + 83.) / 4.))
 
   def f_q_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return bu.math.where(V >= -80.,
                          bu.math.exp(-(V + 22.) / 10.5) + 28.,
                          bu.math.exp((V + 467.) / 66.6))
@@ -668,20 +668,20 @@ class ICaHT_Re1993(_ICa_p2q_markov):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_alpha(self, V):
-    V = (- V + self.V_sh) / bu.mV
+    V = (- V + self.V_sh).to_decimal(bu.mV)
     temp = -27 + V
     return 0.055 * temp / (bu.math.exp(temp / 3.8) - 1)
 
   def f_p_beta(self, V):
-    V = (- V + self.V_sh) / bu.mV
+    V = (- V + self.V_sh).to_decimal(bu.mV)
     return 0.94 * bu.math.exp((-75. + V) / 17.)
 
   def f_q_alpha(self, V):
-    V = (- V + self.V_sh) / bu.mV
+    V = (- V + self.V_sh).to_decimal(bu.mV)
     return 0.000457 * bu.math.exp((-13. + V) / 50.)
 
   def f_q_beta(self, V):
-    V = (- V + self.V_sh) / bu.mV
+    V = (- V + self.V_sh).to_decimal(bu.mV)
     return 0.0065 / (bu.math.exp((-15. + V) / 28.) + 1.)
 
 
@@ -758,17 +758,17 @@ class ICaL_IS2008(_ICa_p2q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1 + bu.math.exp(-(V + 10.) / 4.))
 
   def f_p_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 0.4 + .7 / (bu.math.exp(-(V + 5.) / 15.) + bu.math.exp((V + 5.) / 15.))
 
   def f_q_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp((V + 25.) / 2.))
 
   def f_q_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 300. + 100. / (bu.math.exp((V + 40) / 9.5) + bu.math.exp(-(V + 40) / 9.5))
