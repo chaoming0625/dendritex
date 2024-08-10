@@ -115,7 +115,7 @@ def simulate():
     hh.step_run, times, currents, pbar=bst.transform.ProgressBar(count=100)
   )
 
-  plt.plot(times / bu.ms, bu.math.squeeze(vs / bu.mV))
+  plt.plot(times.to_decimal(bu.ms), bu.math.squeeze(vs.to_decimal(bu.mV)))
   plt.xlabel('Time [ms]')
   plt.ylabel('Potential [mV]')
   plt.show()
