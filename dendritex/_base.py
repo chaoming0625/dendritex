@@ -63,7 +63,7 @@ class State4Integral(bst.ShortTermState):
 
   """
 
-  __module__ = 'dentritex'
+  __module__ = 'dendritex'
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
@@ -80,7 +80,7 @@ class DendriticDynamics(bst.Dynamics):
     n_compartment: The number of compartments in each neuron.
     varshape: The shape of the state variables.
   """
-  __module__ = 'dentritex'
+  __module__ = 'dendritex'
 
   def __init__(
       self,
@@ -136,7 +136,7 @@ class DendriticDynamics(bst.Dynamics):
 
 
 class Container(bst.mixin.Mixin):
-  __module__ = 'dentritex'
+  __module__ = 'dendritex'
 
   _container_name: str
 
@@ -210,7 +210,7 @@ class Container(bst.mixin.Mixin):
 
 
 class TreeNode(bst.mixin.Mixin):
-  __module__ = 'dentritex'
+  __module__ = 'dendritex'
 
   root_type: type
 
@@ -250,7 +250,7 @@ class HHTypedNeuron(DendriticDynamics, Container):
   """
   The base class for the Hodgkin-Huxley typed neuronal membrane dynamics.
   """
-  __module__ = 'dentritex'
+  __module__ = 'dendritex'
   _container_name = 'ion_channels'
 
   def __init__(
@@ -304,7 +304,7 @@ class IonChannel(DendriticDynamics, TreeNode):
   - :py:meth:`reset_state`: Reset the state variables.
 
   """
-  __module__ = 'dentritex'
+  __module__ = 'dendritex'
 
   def current(self, *args, **kwargs):
     raise NotImplementedError
@@ -338,7 +338,7 @@ class Ion(IonChannel, Container):
     size: The size of the simulation target.
     name: The name of the object.
   """
-  __module__ = 'dentritex'
+  __module__ = 'dendritex'
   _container_name = 'channels'
 
   # The type of the master object.
@@ -447,7 +447,7 @@ class MixIons(IonChannel, Container):
   Args:
     ions: Instances of ions. This option defines the master types of all children objects.
   """
-  __module__ = 'dentritex'
+  __module__ = 'dendritex'
 
   root_type = HHTypedNeuron
   _container_name = 'channels'
@@ -577,7 +577,7 @@ class MixIons(IonChannel, Container):
       )
 
 
-@set_module_as('dentritex')
+@set_module_as('dendritex')
 def mix_ions(*ions) -> MixIons:
   """Create mixed ions.
 
@@ -597,4 +597,4 @@ class Channel(IonChannel):
   """
   The base class for modeling channel dynamics.
   """
-  __module__ = 'dentritex'
+  __module__ = 'dendritex'
