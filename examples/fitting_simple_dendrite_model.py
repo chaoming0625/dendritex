@@ -123,7 +123,8 @@ def simulate(currents, params):
   hh.init_state()
 
   times = np.arange(0, currents.shape[0]) * bst.environ.get_dt()
-  vs, spks = bst.transform.for_loop(hh.step_run, times, currents)
+  # vs, spks = bst.transform.for_loop(hh.step_run, times, currents)
+  vs, spks = bst.transform.checkpointed_for_loop(hh.step_run, times, currents)
   return vs, spks
 
 
