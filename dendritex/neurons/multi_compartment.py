@@ -62,7 +62,7 @@ def diffusive_coupling(potentials, coo_ids, resistances):
   assert coo_ids.ndim == 2, f'The coo_ids should be a 2D array. Got {coo_ids.shape}.'
   assert resistances.ndim == 1, f'The conductance should be a 1D array. Got {resistances.shape}.'
 
-  outs = bu.Quantity(bu.math.zeros(potentials.shape), dim=potentials.dim / resistances.dim)
+  outs = bu.Quantity(bu.math.zeros(potentials.shape), unit=potentials.unit / resistances.unit)
   pre_ids = coo_ids[:, 0]
   post_ids = coo_ids[:, 1]
   diff = (potentials[..., pre_ids] - potentials[..., post_ids]) / resistances
@@ -211,8 +211,8 @@ class MultiCompartment(HHTypedNeuron):
 
   def after_integral(self, *args):
     self.V.value = self.sum_delta_inputs(init=self.V.value)
-    self.spike.value = (self.spk_fun((self.V_th - self._last_V) / bu.mV) *
-                        self.spk_fun((self.V.value - self.V_th) / bu.mV))
+    self.spike.value = (self.spk_fun((self.V_th - self._last_V).to_decimal(bu.mV)) *
+                        self.spk_fun((self.V.value - self.V_th).to_decimal(bu.mV)))
 
     channels = self.nodes(level=1, include_self=False).subset(IonChannel)
     for node in channels.values():

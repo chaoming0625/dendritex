@@ -132,16 +132,16 @@ def try_trn_neuron():
   bst.environ.set(dt=0.01 * bu.ms)
 
   # trn = RTC([1, 1])  # [n_neuron, n_compartment]
-  trn = RTC(1)  # [n_neuron, n_compartment]
-  # trn = TRN([1, 1])  # [n_neuron, n_compartment]
+  # trn = RTC(1)  # [n_neuron, n_compartment]
+  trn = TRN([1, 1])  # [n_neuron, n_compartment]
   trn.init_state()
 
-  I = bts.input.section_input(values=[0, -0.05, 0], durations=[100, 100, 500], dt=0.01) * bu.nA
+  I = bts.input.section_input(values=[0, -0.1, 0], durations=[100, 100, 500], dt=0.01) * bu.nA
   times = bu.math.arange(I.shape[0]) * bst.environ.get_dt()
 
   vs = bst.transform.for_loop(trn.step_run, times, I)
 
-  plt.plot(times / bu.ms, bu.math.squeeze(vs / bu.mV))
+  plt.plot(times.to_decimal(bu.ms), bu.math.squeeze(vs.to_decimal(bu.mV)))
   plt.show()
 
 

@@ -95,11 +95,11 @@ class Ih_HM1992(Channel):
     return self.g_max * self.p.value * (self.E - V)
 
   def f_p_inf(self, V):
-    V = V / bu.mV
+    V = V.to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp((V + 75.) / 5.5))
 
   def f_p_tau(self, V):
-    V = V / bu.mV
+    V = V.to_decimal(bu.mV)
     return 1. / (bu.math.exp(-0.086 * V - 14.59) + bu.math.exp(0.0701 * V - 1.87))
 
 # class Ih_De1996(Channel):
@@ -235,10 +235,10 @@ class Ih_HM1992(Channel):
 #     self.OL.value = self.k3 * self.P1.value * self.O.value / self.k4
 #
 #   def f_inf(self, V):
-#     V = V / bu.mV
+#     V = V.to_decimal(bu.mV)
 #     return 1 / (1 + bu.math.exp((V + 75 - self.V_sh) / 5.5))
 #
 #   def f_tau(self, V):
-#     V = V / bu.mV
+#     V = V.to_decimal(bu.mV)
 #     return (20. + 1000 / (bu.math.exp((V + 71.5 - self.V_sh) / 14.2) +
 #                           bu.math.exp(-(V + 89 - self.V_sh) / 11.6))) / self.phi

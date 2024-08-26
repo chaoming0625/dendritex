@@ -1,5 +1,5 @@
 numpy
 jax
-brainunit
-brainstate
+brainunit>=0.0.2
+brainstate>=0.0.2
 

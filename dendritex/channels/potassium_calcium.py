@@ -23,7 +23,7 @@ __all__ = [
 class KCaChannel(Channel):
   __module__ = 'dendritex.channels'
 
-  root_type = bst.mixin.JointTypes[Calcium, Potassium]
+  root_type = bst.mixin.JointTypes[Potassium, Calcium]
 
   def before_integral(self, V, K: IonInfo, Ca: IonInfo):
     pass
@@ -91,7 +91,7 @@ class IAHP_De1994(KCaChannel):
   """
   __module__ = 'dendritex.channels'
 
-  root_type = bst.mixin.JointTypes[Calcium, Potassium]
+  root_type = bst.mixin.JointTypes[Potassium, Calcium]
 
   def __init__(
       self,

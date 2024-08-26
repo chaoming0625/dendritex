@@ -191,12 +191,12 @@ class IKDR_Ba2002(_IK_p4_markov):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_alpha(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     tmp = V - 15.
     return 0.032 * tmp / (1. - bu.math.exp(-tmp / 5.))
 
   def f_p_beta(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 0.5 * bu.math.exp(-(V - 10.) / 40.)
 
 
@@ -256,11 +256,11 @@ class IK_TM1991(_IK_p4_markov):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_alpha(self, V):
-    c = 15 + (- V + self.V_sh) / bu.mV
+    c = 15 + (- V + self.V_sh).to_decimal(bu.mV)
     return 0.032 * c / (bu.math.exp(c / 5) - 1.)
 
   def f_p_beta(self, V):
-    V = (self.V_sh - V) / bu.mV
+    V = (self.V_sh - V).to_decimal(bu.mV)
     return 0.5 * bu.math.exp((10 + V) / 40)
 
 
@@ -321,12 +321,12 @@ class IK_HH1952(_IK_p4_markov):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_alpha(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     temp = V + 10
     return 0.01 * temp / (1 - bu.math.exp(-temp / 10))
 
   def f_p_beta(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 0.125 * bu.math.exp(-(V + 20) / 80)
 
 
@@ -492,20 +492,20 @@ class IKA1_HM1992(_IKA_p4q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp(-(V + 60.) / 8.5))
 
   def f_p_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (bu.math.exp((V + 35.8) / 19.7) +
                  bu.math.exp(-(V + 79.7) / 12.7)) + 0.37
 
   def f_q_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp((V + 78.) / 6.))
 
   def f_q_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return bu.math.where(
       V < -63,
       1. / (bu.math.exp((V + 46.) / 5.) +
@@ -586,20 +586,20 @@ class IKA2_HM1992(_IKA_p4q_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp(-(V + 36.) / 20.))
 
   def f_p_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (bu.math.exp((V + 35.8) / 19.7) +
                  bu.math.exp(-(V + 79.7) / 12.7)) + 0.37
 
   def f_q_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp((V + 78.) / 6.))
 
   def f_q_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return bu.math.where(
       V < -63,
       1. / (bu.math.exp((V + 46.) / 5.) +
@@ -765,20 +765,20 @@ class IKK2A_HM1992(_IKK2_pq_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp(-(V + 43.) / 17.))
 
   def f_p_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (bu.math.exp((V - 81.) / 25.6) +
                  bu.math.exp(-(V + 132) / 18.)) + 9.9
 
   def f_q_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp((V + 58.) / 10.6))
 
   def f_q_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (bu.math.exp((V - 1329.) / 200.) +
                  bu.math.exp(-(V + 130.) / 7.1))
 
@@ -853,20 +853,20 @@ class IKK2B_HM1992(_IKK2_pq_ss):
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
 
   def f_p_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp(-(V + 43.) / 17.))
 
   def f_p_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (bu.math.exp((V - 81.) / 25.6) +
                  bu.math.exp(-(V + 132) / 18.)) + 9.9
 
   def f_q_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp((V + 58.) / 10.6))
 
   def f_q_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return bu.math.where(
       V < -70,
       1. / (bu.math.exp((V - 1329.) / 200.) +
@@ -953,11 +953,11 @@ class IKNI_Ya1989(PotassiumChannel):
       assert self.p.value.shape[0] == batch_size
 
   def f_p_inf(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return 1. / (1. + bu.math.exp(-(V + 35.) / 10.))
 
   def f_p_tau(self, V):
-    V = (V - self.V_sh) / bu.mV
+    V = (V - self.V_sh).to_decimal(bu.mV)
     temp = V + 35.
     return self.tau_max / (3.3 * bu.math.exp(temp / 20.) + bu.math.exp(-temp / 20.))
 
