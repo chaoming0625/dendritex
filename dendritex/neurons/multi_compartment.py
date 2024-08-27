@@ -66,8 +66,8 @@ def diffusive_coupling(potentials, coo_ids, resistances):
   pre_ids = coo_ids[:, 0]
   post_ids = coo_ids[:, 1]
   diff = (potentials[..., pre_ids] - potentials[..., post_ids]) / resistances
-  outs[..., pre_ids] -= diff
-  outs[..., post_ids] += diff
+  outs = outs.at[..., pre_ids].add(-diff)
+  outs = outs.at[..., post_ids].add(diff)
   return outs
 
 
