@@ -74,6 +74,7 @@ class SingleCompartment(HHTypedNeuron):
       A: Union[bst.typing.ArrayLike, Callable] = 1e-3 * bu.cm ** 2,
       V_th: Union[bst.typing.ArrayLike, Callable] = 0. * bu.mV,
       V_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Uniform(-70 * bu.mV, -60. * bu.mV),
+      spk_fun: Callable = bst.surrogate.ReluGrad(),
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
       **ion_channels
@@ -87,20 +88,17 @@ class SingleCompartment(HHTypedNeuron):
     self.A = A
     self.V_th = V_th
     self._V_initializer = V_initializer
+    self.spk_fun = spk_fun
 
   def init_state(self, batch_size=None):
     self.V = State4Integral(bst.init.param(self._V_initializer, self.varshape, batch_size))
-    self.spike = bst.ShortTermState(bst.init.param(bu.math.zeros, self.varshape, batch_size))
     super().init_state(batch_size)
 
   def reset_state(self, batch_size=None):
     self.V.value = bst.init.param(self._V_initializer, self.varshape, batch_size)
-    self.spike.value = bst.init.param(bu.math.zeros, self.varshape, batch_size)
     super().init_state(batch_size)
 
   def before_integral(self, *args):
-    self._last_V = self.V.value
-
     channels = self.nodes(level=1, include_self=False).subset(IonChannel)
     for node in channels.values():
       node.before_integral(self.V.value)
@@ -125,9 +123,6 @@ class SingleCompartment(HHTypedNeuron):
 
   def after_integral(self, *args):
     self.V.value = self.sum_delta_inputs(init=self.V.value)
-    spike = bu.math.logical_and(self._last_V >= self.V_th, self.V.value < self.V_th)
-    self.spike.value = bu.math.asarray(spike, dtype=self.spike.value.dtype)
-
     channels = self.nodes(level=1, include_self=False).subset(IonChannel)
     for node in channels.values():
       node.after_integral(self.V.value)

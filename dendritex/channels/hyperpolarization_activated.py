@@ -161,11 +161,11 @@ class Ih_HM1992(Channel):
 #   def __init__(
 #       self,
 #       size: bst.typing.Size,
-#       E: Union[bst.typing.ArrayLike, Callable] = -40. * bu.mV,
+#       E: Union[bst.typing.ArrayLike, Callable] = -40. * u.mV,
 #       k2: Union[bst.typing.ArrayLike, Callable] = 4e-4,
 #       k4: Union[bst.typing.ArrayLike, Callable] = 1e-3,
-#       V_sh: Union[bst.typing.ArrayLike, Callable] = 0. * bu.mV,
-#       g_max: Union[bst.typing.ArrayLike, Callable] = 0.02 * (bu.mS / bu.cm ** 2),
+#       V_sh: Union[bst.typing.ArrayLike, Callable] = 0. * u.mV,
+#       g_max: Union[bst.typing.ArrayLike, Callable] = 0.02 * (u.mS / u.cm ** 2),
 #       g_inc: Union[bst.typing.ArrayLike, Callable] = 2.,
 #       Ca_half: Union[bst.typing.ArrayLike, Callable] = 2e-3,
 #       T: bst.typing.ArrayLike = 36.,
@@ -219,14 +219,14 @@ class Ih_HM1992(Channel):
 #     return self.g_max * (self.O.value + self.g_inc * self.OL.value) * (self.E - V)
 #
 #   def init_state(self, V, Ca, batch_size=None):
-#     self.O = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-#     self.OL = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-#     self.P1 = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+#     self.O = State4Integral(bst.init.param(u.math.zeros, self.varshape, batch_size))
+#     self.OL = State4Integral(bst.init.param(u.math.zeros, self.varshape, batch_size))
+#     self.P1 = State4Integral(bst.init.param(u.math.zeros, self.varshape, batch_size))
 #
 #   def reset_state(self, V, Ca: IonInfo, batch_size=None):
 #     varshape = self.varshape if (batch_size is None) else ((batch_size,) + self.varshape)
 #     k1 = self.k1 * Ca.C ** 4
-#     self.P1.value = bu.math.broadcast_arrays(k1 / (k1 + self.k2), varshape)
+#     self.P1.value = u.math.broadcast_arrays(k1 / (k1 + self.k2), varshape)
 #     inf = self.f_inf(V)
 #     tau = self.f_tau(V)
 #     alpha = inf / tau
@@ -235,10 +235,10 @@ class Ih_HM1992(Channel):
 #     self.OL.value = self.k3 * self.P1.value * self.O.value / self.k4
 #
 #   def f_inf(self, V):
-#     V = V.to_decimal(bu.mV)
-#     return 1 / (1 + bu.math.exp((V + 75 - self.V_sh) / 5.5))
+#     V = V.to_decimal(u.mV)
+#     return 1 / (1 + u.math.exp((V + 75 - self.V_sh) / 5.5))
 #
 #   def f_tau(self, V):
-#     V = V.to_decimal(bu.mV)
-#     return (20. + 1000 / (bu.math.exp((V + 71.5 - self.V_sh) / 14.2) +
-#                           bu.math.exp(-(V + 89 - self.V_sh) / 11.6))) / self.phi
+#     V = V.to_decimal(u.mV)
+#     return (20. + 1000 / (u.math.exp((V + 71.5 - self.V_sh) / 14.2) +
+#                           u.math.exp(-(V + 89 - self.V_sh) / 11.6))) / self.phi
