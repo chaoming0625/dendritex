@@ -35,27 +35,6 @@ Installation
 
 
 
-----
-
-
-See also the BDP ecosystem
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-- `brainstate <https://github.com/chaoming0625/brainstate>`_: A ``State``-based transformation system for brain dynamics programming.
-
-- `brainunit <https://github.com/chaoming0625/brainunit>`_: Physical units and unit-aware mathematical system in JAX for brain dynamics and AI4Science.
-
-- `braintaichi <https://github.com/chaoming0625/braintaichi>`_: Leveraging Taichi Lang to customize brain dynamics operators.
-
-- `brainscale <https://github.com/chaoming0625/brainscale>`_: The scalable online learning framework for biological neural networks.
-
-- `dendritex <https://github.com/chaoming0625/dendritex>`_: The dendritic modeling in JAX.
-
-- `braintools <https://github.com/chaoming0625/braintools>`_: The toolbox for the brain dynamics simulation, training and analysis.
-
-
-
 
 .. toctree::
    :hidden:
@@ -67,6 +46,7 @@ See also the BDP ecosystem
    apis/dendritex.neurons.rst
    apis/dendritex.ions.rst
    apis/dendritex.channels.rst
+   apis/integration.rst
 
 
 
