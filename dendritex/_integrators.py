@@ -121,7 +121,7 @@ def _diffrax_solve(
         return derivatives
 
   # stateful function and make jaxpr
-  stateful_fn = bst.transform.StatefulFunction(model_to_derivative).make_jaxpr(0. * u.ms, *args)
+  stateful_fn = bst.transform.StatefulFunction(model_to_derivative).make_jaxpr(0., *args)
 
   # states
   states = stateful_fn.get_states()
