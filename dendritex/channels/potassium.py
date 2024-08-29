@@ -27,6 +27,9 @@ __all__ = [
   'IKNI_Ya1989',
   'IK_Leak',
   "IKv11_Ak2007",
+  'IKv34_Ma2020',
+  "IKv43_Ma2020",
+
 ]
 
 
@@ -1104,3 +1107,205 @@ class IKv11_Ak2007(PotassiumChannel):
   def f_p_beta(self, V):
     V = (V - self.V_sh) / bu.mV
     return self.cb * bu.math.exp(-(V + self.cvb) / self.ckb)
+  
+
+
+
+class IKv34_Ma2020(PotassiumChannel):
+  r"""
+  : HH TEA-sensitive Purkinje potassium current
+  : Created 8/5/02 - nwg
+  """
+  __module__ = 'dendritex.channels'
+
+  def __init__(
+      self,
+      size: Union[int, Sequence[int]],
+      g_max: Union[bst.typing.ArrayLike, Callable] = 4. * (bu.mS / bu.cm ** 2),
+      V_sh: Union[bst.typing.ArrayLike, Callable] = -11. * bu.mV,
+      T_base: bst.typing.ArrayLike = 3.,
+      T: bst.typing.ArrayLike = 22,
+      name: Optional[str] = None,
+      mode: Optional[bst.mixin.Mode] = None,
+  ):
+
+    super().__init__(
+      size,
+      name=name,
+      mode=mode
+    )
+
+    # parameters
+    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
+
+    self.T = bst.init.param(T, self.varshape, allow_none=False)
+    self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
+    self.phi = bst.init.param(T_base ** ((T - 37) / 10), self.varshape, allow_none=False)
+    self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
+
+
+    self.mivh = -24
+    self.mik = 15.4
+    self.mty0 = .00012851 
+    self.mtvh1 = 100.7
+    self.mtk1 = 12.9
+    self.mtvh2 = -56.0
+    self.mtk2 = -23.1	
+
+    self.hiy0 = .31
+    self.hiA = .69
+    self.hivh = -5.802
+    self.hik = 11.2
+
+
+  def compute_derivative(self, V, K: IonInfo):
+    self.p.derivative = self.phi * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V) / bu.ms
+    self.q.derivative = self.phi * (self.f_q_inf(V) - self.q.value) / self.f_q_tau(V) / bu.ms
+
+  def current(self, V, K: IonInfo):
+    return self.g_max * self.p.value ** 3 * self.q.value * (K.E - V)
+
+  def init_state(self, V, K: IonInfo, batch_size: int = None):
+    self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+    self.q = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+
+  def reset_state(self, V, K: IonInfo, batch_size=None):
+    self.p.value = self.f_p_inf(V)
+    self.q.value = self.f_q_inf(V)
+    if isinstance(batch_size, int):
+      assert self.p.value.shape[0] == batch_size
+      assert self.q.value.shape[0] == batch_size
+
+  def f_p_inf(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return 1./(1.+bu.math.exp(-(V-self.mivh)/self.mik)) 
+
+  def f_p_tau(self, V):
+    V = (V - self.V_sh) / bu.mV
+    mtau_func = bu.math.where (V<-35, (3.4225e-5+.00498*bu.math.exp(-V/-28.29))*3,
+                               (self.mty0 + 1./(bu.math.exp((V+self.mtvh1)/self.mtk1)+bu.math.exp((V+self.mtvh2)/self.mtk2))))
+    return 1000 * mtau_func
+
+  def f_q_inf(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.hiy0 + self.hiA/(1+bu.math.exp((V-self.hivh)/self.hik))
+
+  def f_q_tau(self, V):
+    V = (V - self.V_sh) / bu.mV
+    htau_func = bu.math.where(V>0, (.0012+.0023*bu.math.exp(-.141*V)),
+                              (1.2202e-05 + .012 * bu.math.exp(-((V-(-56.3))/49.6)**2))) 
+    return 1000 * htau_func
+  
+
+    
+      
+class IKv43_Ma2020(PotassiumChannel):
+  r"""
+  TITLE Cerebellum Granule Cell Model
+
+  COMMENT
+        KA channel
+   
+	Author: E.D'Angelo, T.Nieus, A. Fontana
+	Last revised: Egidio 3.12.2003
+  """
+  __module__ = 'dendritex.channels'
+
+  def __init__(
+      self,
+      size: Union[int, Sequence[int]],
+      g_max: Union[bst.typing.ArrayLike, Callable] = 3.2 * (bu.mS / bu.cm ** 2),
+      V_sh: Union[bst.typing.ArrayLike, Callable] = 0. * bu.mV,
+      T_base: bst.typing.ArrayLike = 3.,
+      T: bst.typing.ArrayLike = 22,
+      name: Optional[str] = None,
+      mode: Optional[bst.mixin.Mode] = None,
+  ):
+
+    super().__init__(
+      size,
+      name=name,
+      mode=mode
+    )
+
+    # parameters
+    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
+
+    self.T = bst.init.param(T, self.varshape, allow_none=False)
+    self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
+    self.phi = bst.init.param(T_base ** ((T - 25.5) / 10), self.varshape, allow_none=False)
+    self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
+
+
+
+    self.Aalpha_a = 0.8147
+    self.Kalpha_a = -23.32708
+    self.V0alpha_a = -9.17203
+    self.Abeta_a = 0.1655
+    self.Kbeta_a = 19.47175
+    self.V0beta_a = -18.27914
+
+    self.Aalpha_b = 0.0368
+    self.Kalpha_b = 12.8433
+    self.V0alpha_b = -111.33209
+    self.Abeta_b = 0.0345
+    self.Kbeta_b = -8.90123
+    self.V0beta_b = -49.9537
+
+    self.V0_ainf = -38
+    self.K_ainf = -17
+
+    self.V0_binf = -78.8
+    self.K_binf = 8.4
+
+
+
+  def compute_derivative(self, V, K: IonInfo):
+    self.p.derivative = self.phi * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V) / bu.ms
+    self.q.derivative = self.phi * (self.f_q_inf(V) - self.q.value) / self.f_q_tau(V) / bu.ms
+
+  def current(self, V, K: IonInfo):
+    return self.g_max * self.p.value ** 3 * self.q.value * (K.E - V)
+
+  def init_state(self, V, K: IonInfo, batch_size: int = None):
+    self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+    self.q = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+
+  def reset_state(self, V, K: IonInfo, batch_size=None):
+    self.p.value = self.f_p_inf(V)
+    self.q.value = self.f_q_inf(V)
+    if isinstance(batch_size, int):
+      assert self.p.value.shape[0] == batch_size
+      assert self.q.value.shape[0] == batch_size
+
+  def sigm(self, x, y):
+    return 1/(bu.math.exp(x/y) + 1)
+
+  def f_p_alpha(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.Aalpha_a*self.sigm(V-self.V0alpha_a,self.Kalpha_a)
+  
+  def f_p_beta(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.Abeta_a/(bu.math.exp((V-self.V0beta_a)/self.Kbeta_a))
+  def f_q_alpha(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.Aalpha_b*self.sigm(V-self.V0alpha_b,self.Kalpha_b)
+  def f_q_beta(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.Abeta_b*self.sigm(V-self.V0beta_b,self.Kbeta_b)
+
+
+  def f_p_inf(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return 1/(1+bu.math.exp((V-self.V0_ainf)/self.K_ainf)) 
+
+  def f_p_tau(self, V):
+    return 1.  /  ( self.f_p_alpha(V) + self.f_p_beta(V))
+
+  def f_q_inf(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return 1/(1+bu.math.exp((V-self.V0_binf)/self.K_binf))
+
+  def f_q_tau(self, V):
+    return 1.  /  ( self.f_q_alpha(V) + self.f_q_beta(V))
