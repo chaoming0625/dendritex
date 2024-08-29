@@ -269,7 +269,7 @@ def main():
   os.makedirs('apis/', exist_ok=True)
 
   _write_module(module_name='dendritex._integrators',
-                automodule='brainunit',
+                automodule='dendritex',
                 filename='apis/integration.rst',
                 header='Numerical Integration Methods',
                 template=True)
