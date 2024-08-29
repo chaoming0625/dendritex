@@ -26,6 +26,7 @@ __all__ = [
   'IKK2B_HM1992',
   'IKNI_Ya1989',
   'IK_Leak',
+  "IKv11_Ak2007",
 ]
 
 
@@ -997,3 +998,109 @@ class IK_Leak(PotassiumChannel):
 
   def current(self, V, K: IonInfo):
     return self.g_max * (K.E - V)
+
+
+class IKv11_Ak2007(PotassiumChannel):
+  r"""
+  TITLE Voltage-gated low threshold potassium current from Kv1 subunits
+
+  COMMENT
+
+  NEURON implementation of a potassium channel from Kv1.1 subunits
+  Kinetical scheme: Hodgkin-Huxley m^4, no inactivation
+
+  Experimental data taken from:
+  Human Kv1.1 expressed in xenopus oocytes: Zerr et al., J Neurosci 18, 2842, 2848, 1998
+  Vhalf = -28.8 +- 2.3 mV; k = 8.1+- 0.9 mV
+
+  The voltage dependency of the rate constants was approximated by:
+
+  alpha = ca * exp(-(v+cva)/cka)
+  beta = cb * exp(-(v+cvb)/ckb)
+
+  Parameters ca, cva, cka, cb, cvb, ckb
+  were determined from least square-fits to experimental data of G/Gmax(v) and tau(v).
+  Values are defined in the CONSTANT block.
+  Model includes calculation of Kv gating current
+
+  Reference: Akemann et al., Biophys. J. (2009) 96: 3959-3976
+
+  Laboratory for Neuronal Circuit Dynamics
+  RIKEN Brain Science Institute, Wako City, Japan
+  http://www.neurodynamics.brain.riken.jp
+
+  Date of Implementation: April 2007
+  Contact: akemann@brain.riken.jp
+  """
+  __module__ = 'dendritex.channels'
+
+  def __init__(
+      self,
+      size: Union[int, Sequence[int]],
+      g_max: Union[bst.typing.ArrayLike, Callable] = 4. * (bu.mS / bu.cm ** 2),
+      gateCurrent :Union[bst.typing.ArrayLike, Callable] = 0. ,
+      gunit :Union[bst.typing.ArrayLike, Callable] = 16. * 1e-9 * bu.mS ,
+      V_sh: Union[bst.typing.ArrayLike, Callable] = 0. * bu.mV,
+      T_base: bst.typing.ArrayLike = 2.7,
+      T: bst.typing.ArrayLike = 22,
+      name: Optional[str] = None,
+      mode: Optional[bst.mixin.Mode] = None,
+  ):
+  
+    super().__init__(
+      size,
+      name=name,
+      mode=mode
+    )
+
+    # parameters
+    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
+    self.gateCurrent = bst.init.param(gateCurrent, self.varshape, allow_none=False)
+    self.gunit = bst.init.param(gunit, self.varshape, allow_none=False)
+    self.T = bst.init.param(T, self.varshape, allow_none=False)
+    self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
+    self.phi = bst.init.param(T_base ** ((T - 22) / 10), self.varshape, allow_none=False)
+    self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
+
+
+    self.e0 = 1.60217646e-19 * bu.coulomb
+    self.q10 = 2.7
+    self.ca = 0.12889
+    self.cva = 45 
+    self.cka = -33.90877 
+    self.cb = 0.12889 
+    self.cvb = 45 
+    self.ckb = 12.42101 
+    self.zn = 2.7978 
+
+
+  def init_state(self, V, K: IonInfo, batch_size=None):
+    self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+
+  def reset_state(self, V, K: IonInfo, batch_size: int = None):
+    alpha = self.f_p_alpha(V)
+    beta = self.f_p_beta(V)
+    self.p.value = alpha / (alpha + beta)
+    if isinstance(batch_size, int):
+      assert self.p.value.shape[0] == batch_size
+
+  def compute_derivative(self, V, K: IonInfo):
+    self.p.derivative = self.phi * (self.f_p_alpha(V) * (1. - self.p.value) - self.f_p_beta(V) * self.p.value) / bu.ms
+    
+
+  def current(self, V, K: IonInfo):
+    if self.gateCurrent == 0:
+      ik = self.g_max * self.p.value ** 4 * (K.E - V)
+    else:
+      ngateFlip = self.phi * (self.f_p_alpha(V) * (1. - self.p.value) - self.f_p_beta(V) * self.p.value) / bu.ms
+      igate = (1e12) * self.g_max / self.gunit * 1e6 * self.e0 * 4 *self.zn  * ngateFlip  # NONSPECIFIC_CURRENT igate
+      ik = -igate + self.g_max * self.p.value ** 4 * (K.E - V)
+    return ik
+
+  def f_p_alpha(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.ca *  bu.math.exp( - (V + self.cva) / self.cka)
+  
+  def f_p_beta(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.cb * bu.math.exp(-(V + self.cvb) / self.ckb)
