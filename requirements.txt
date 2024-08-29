@@ -2,4 +2,4 @@ numpy
 jax
 brainunit>=0.0.2
 brainstate>=0.0.2
-
+diffrax
