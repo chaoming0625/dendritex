@@ -29,7 +29,7 @@ __all__ = [
   "IKv11_Ak2007",
   'IKv34_Ma2020',
   "IKv43_Ma2020",
-
+  'IKM_Grc_Ma2020',
 ]
 
 
@@ -1309,3 +1309,80 @@ class IKv43_Ma2020(PotassiumChannel):
 
   def f_q_tau(self, V):
     return 1.  /  ( self.f_q_alpha(V) + self.f_q_beta(V))
+  
+
+class IKM_Grc_Ma2020(PotassiumChannel):
+  r"""
+    TITLE Cerebellum Granule Cell Model
+
+  COMMENT
+          KM channel
+    
+    Author: A. Fontana
+    CoAuthor: T.Nieus Last revised: 20.11.99
+  """
+  __module__ = 'dendritex.channels'
+
+  def __init__(
+      self,
+      size: Union[int, Sequence[int]],
+      g_max: Union[bst.typing.ArrayLike, Callable] = 0.25 * (bu.mS / bu.cm ** 2),
+      V_sh: Union[bst.typing.ArrayLike, Callable] = 0. * bu.mV,
+      T_base: bst.typing.ArrayLike = 3,
+      T: bst.typing.ArrayLike = 22,
+      name: Optional[str] = None,
+      mode: Optional[bst.mixin.Mode] = None,
+  ):
+  
+    super().__init__(
+      size,
+      name=name,
+      mode=mode
+    )
+
+    # parameters
+    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
+    self.T = bst.init.param(T, self.varshape, allow_none=False)
+    self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
+    self.phi = bst.init.param(T_base ** ((T - 22) / 10), self.varshape, allow_none=False)
+    self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
+
+
+    self.Aalpha_n = 0.0033
+    self.Kalpha_n = 40
+    self.V0alpha_n = -30
+
+    self.Abeta_n = 0.0033
+    self.Kbeta_n = -20
+    self.V0beta_n = -30
+
+    self.V0_ninf = -35
+    self.B_ninf = 6
+
+  def init_state(self, V, K: IonInfo, batch_size=None):
+    self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+
+
+  def reset_state(self, V, K: IonInfo, batch_size=None):
+    self.p.value = self.f_p_inf(V)
+    if isinstance(batch_size, int):
+      assert self.p.value.shape[0] == batch_size
+
+  def current(self, V, K: IonInfo):
+    return self.g_max * self.p.value * (K.E - V)
+  
+  def f_p_alpha(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.Aalpha_n*bu.math.exp((V-self.V0alpha_n)/self.Kalpha_n) 
+  
+  def f_p_beta(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.Abeta_n*bu.math.exp((V-self.V0beta_n)/self.Kbeta_n) 
+
+
+  def f_p_inf(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return  1/(1+bu.math.exp(-(v-self.V0_ninf)/self.B_ninf))
+
+  def f_p_tau(self, V):
+    return 1.  /  ( self.f_p_alpha(V) + self.f_p_beta(V))
