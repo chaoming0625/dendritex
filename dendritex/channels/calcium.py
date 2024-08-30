@@ -1076,7 +1076,7 @@ class ICav31_Ma2020(CalciumChannel):
     self.A_tau_h = 1.0
     self.v0_tau_h1 = -32
     self.k_tau_h1 = 7
-
+    self.z = 2
 
 
   def init_state(self, V, Ca: IonInfo, batch_size: int = None):
@@ -1102,25 +1102,22 @@ class ICav31_Ma2020(CalciumChannel):
   def f_p_tau(self, V):
     V = V / bu.mV
     return bu.math.where(V<=-90, 1, (self.C_tau_m + self.A_tau_m / (bu.math.exp((V - self.v0_tau_m1)/ self.k_tau_m1) + bu.math.exp((V - self.v0_tau_m2)/self.k_tau_m2))) )
-  def f_p_tau(self, V):
+  def f_q_tau(self, V):
     V = V / bu.mV
     return ( self.C_tau_h + self.A_tau_h / bu.math.exp((V - self.v0_tau_h1)/self.k_tau_h1) )
   
   def ghk(self, V, Ca: IonInfo): 
     E = (1e-3) * V
-    zeta = (2 * bu.faraday_constant * E )/( bu.gas_constant  * (273.15 + self.T) * bu.kelvin)
+    zeta = (self.z * bu.faraday_constant * E )/( bu.gas_constant  * (273.15 + self.T) * bu.kelvin)
     zeta = zeta.to_decimal()
     ci = Ca.C
     co = 2 * bu.mM  #co = Ca.C0 for Calciumdetailed
-    g_1 = (1e-6) * bu.faraday_constant * (ci - co * bu.math.exp(-zeta)) * (1 + zeta/2)
-    print(g_1)
-    g_2= (1e-6) * (zeta*bu.faraday_constant) * (ci - co*bu.math.exp(-zeta)) / (1-bu.math.exp(-zeta))
+    g_1 = (1e-6) * (self.z * bu.faraday_constant) * (ci - co * bu.math.exp(-zeta)) * (1 + zeta/2)
+    g_2= (1e-6) *( self.z * zeta * bu.faraday_constant) * (ci - co*bu.math.exp(-zeta)) / (1-bu.math.exp(-zeta))
     return bu.math.where(bu.math.abs((1-bu.math.exp(-zeta))) <= 1e-6,g_1,g_2)
   
   def current(self, V, Ca: IonInfo):
-    i = (1e3)*self.g_max * self.p.value ** 2 * self.q.value * self.ghk(V,Ca)
-    print(self.ghk(V,Ca))
-    return (1e3)*self.g_max * self.p.value ** 2 * self.q.value * self.ghk(V,Ca)
+    return -(1e3)*self.g_max * self.p.value ** 2 * self.q.value * self.ghk(V,Ca)
   
 
 
