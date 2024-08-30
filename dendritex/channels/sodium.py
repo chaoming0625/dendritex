@@ -430,28 +430,21 @@ class INa_Rsg(SodiumChannel):
     self.I4 = State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
     self.I5 = State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
     self.O =  State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-    self.B =  State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
+    self.B =  State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
     self.I6 = State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
- 
     self.normalize_states([self.C1, self.C2, self.C3, self.C4, self.C5, self.I1, self.I2, self.I3, self.I4, self.I5, self.O, self.B, self.I6])
   def normalize_states(self, states):
     total = 0.
     for state in states:
         state.value = bu.math.maximum(state.value, 0)
         total = total + state.value
-    
     for state in states:
         state.value = state.value/total
 
   def before_integral(self, V, Na: IonInfo):
     self.normalize_states([self.C1, self.C2, self.C3, self.C4, self.C5, self.I1, self.I2, self.I3, self.I4, self.I5, self.O, self.B, self.I6])
 
-  def after_integral(self, V, Na: IonInfo):
-    self.normalize_states([self.C1, self.C2, self.C3, self.C4, self.C5, self.I1, self.I2, self.I3, self.I4, self.I5, self.O, self.B, self.I6])
-
   def compute_derivative(self, V, Na: IonInfo):
-
-    #self.I6.derivative = 0. / bu.ms
    
     self.C1.derivative = (self.I1.value * self.bi1(V) + self.C2.value * self.b01(V) - self.C1.value * (self.fi1(V) + self.f01(V))) / bu.ms
     self.C2.derivative = (self.C1.value * self.f01(V) + self.I2.value * self.bi2(V) + self.C3.value * self.b02(V) - self.C2.value * (self.b01(V) + self.fi2(V) + self.f02(V)))/ bu.ms
@@ -467,17 +460,11 @@ class INa_Rsg(SodiumChannel):
     self.I5.derivative = (self.I4.value * self.f14(V) + self.C5.value * self.fi5(V) + self.I6.value * self.b1n(V) - self.I5.value * (self.b14(V) + self.bi5(V) + self.f1n(V)))/ bu.ms
     self.I6.derivative = (self.I5.value * self.f1n(V) + self.O.value  * self.fin(V) - self.I6.value * (self.b1n(V) + self.bin(V))) / bu.ms
     
-    #print(f"O: {jax.device_get(self.O.value)}, B: {jax.device_get(self.B.value)}")
-
-
   def reset_state(self, V, Na: IonInfo, batch_size=None):
-  
     self.normalize_states([self.C1, self.C2, self.C3, self.C4, self.C5, self.I1, self.I2, self.I3, self.I4, self.I5, self.O, self.B, self.I6])
         
   def current(self, V, Na: IonInfo):
-    
     return self.g_max * self.O.value  * (Na.E - V)
- 
  
   f01 = lambda self, V: 4 * self.alpha * bu.math.exp((V/ bu.mV) / self.x1) * self.phi
   f02 = lambda self, V: 3 * self.alpha * bu.math.exp((V/ bu.mV) / self.x1) * self.phi
