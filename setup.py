@@ -54,11 +54,11 @@ setup(
   description='Dendrite Modeling in Python',
   long_description=README,
   long_description_content_type="text/markdown",
-  author='Dendrite Developers',
+  author='Dendritex Developers',
   author_email='chao.brain@qq.com',
   packages=packages,
   python_requires='>=3.9',
-  install_requires=['numpy>=1.15', 'jax', 'brainunit>=0.0.2', 'brainstate>=0.0.2'],
+  install_requires=['numpy>=1.15', 'jax', 'brainunit>=0.0.2', 'brainstate>=0.0.2', 'diffrax'],
   url='https://github.com/chaoming0625/dendritex',
   project_urls={
     "Bug Tracker": "https://github.com/chaoming0625/dendritex/issues",
@@ -67,12 +67,15 @@ setup(
   },
   extras_require={
     'cpu': ['jaxlib'],
-    'cuda12': ['jaxlib[cuda12_pip]', ],
+    'cuda12': ['jaxlib[cuda12]', ],
     'tpu': ['jaxlib[tpu]'],
   },
-  keywords=('physical unit, '
-            'physical quantity, '
-            'brain modeling'),
+  keywords=(
+    'dendritic computation, '
+    'dendritic modeling, '
+    'brain modeling, '
+    'neuron simulation'
+  ),
   classifiers=[
     'Natural Language :: English',
     'Operating System :: OS Independent',

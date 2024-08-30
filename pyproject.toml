@@ -50,6 +50,7 @@ dependencies = [
     'numpy',
     'brainstate',
     'brainunit',
+    'diffrax',
 ]
 
 dynamic = ['version']

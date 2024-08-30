@@ -119,12 +119,12 @@ class _CalciumDynamics(Calcium):
   def init_state(self, V, batch_size=None):
     # Calcium concentration
     self.C = State4Integral(bst.init.param(self._C_initializer, self.varshape, batch_size))
-    self.E = bst.ShortTermState(self._reversal_potential(self.C.value))
+    # self.E = bst.ShortTermState(self._reversal_potential(self.C.value))
     super().init_state(V, batch_size)
 
   def reset_state(self, V, batch_size=None):
     self.C.value = bst.init.param(self._C_initializer, self.varshape, batch_size)
-    self.E.value = self._reversal_potential(self.C.value)
+    # self.E.value = self._reversal_potential(self.C.value)
     super().reset_state(V, batch_size)
 
   def compute_derivative(self, V):
@@ -135,8 +135,12 @@ class _CalciumDynamics(Calcium):
       node.compute_derivative(V, ca_info)
     self.C.derivative = self.derivative(self.C.value, bst.environ.get('t'), V)
 
-  def after_integral(self, V):
-    self.E.value = self._reversal_potential(self.C.value)
+  @property
+  def E(self):
+    return self._reversal_potential(self.C.value)
+
+  # def after_integral(self, V):
+  #   self.E.value = self._reversal_potential(self.C.value)
 
   def _reversal_potential(self, C):
     return self._constant * bu.math.log(self.C0 / C)

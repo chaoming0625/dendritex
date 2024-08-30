@@ -79,7 +79,7 @@ def init_coupling_weight(n_compartment, connection, diam, L, Ra):
   #   #         \frac{4R_{a}\cdot L_{j}}{\pi\cdot diam_{j}^{2}})
   #   R_ij = 0.5 * (4 * Ra[i] * L[i] / (np.pi * diam[i] ** 2) + 4 * Ra[j] * L[j] / (np.pi * diam[j] ** 2))
   #   weights.append(R_ij)
-  # return bu.Quantity(weights)
+  # return u.Quantity(weights)
 
   assert isinstance(connection, (np.ndarray, jax.Array)), 'The connection should be a numpy/jax array.'
   pre_ids = connection[:, 0]
@@ -173,17 +173,13 @@ class MultiCompartment(HHTypedNeuron):
 
   def init_state(self, batch_size=None):
     self.V = State4Integral(bst.init.param(self._V_initializer, self.varshape, batch_size))
-    self.spike = bst.ShortTermState(bst.init.param(bu.math.zeros, self.varshape, batch_size))
     super().init_state(batch_size)
 
   def reset_state(self, batch_size=None):
     self.V.value = bst.init.param(self._V_initializer, self.varshape, batch_size)
-    self.spike.value = bst.init.param(bu.math.zeros, self.varshape, batch_size)
     super().reset_state(batch_size)
 
   def before_integral(self, *args):
-    self._last_V = self.V.value
-
     channels = self.nodes(level=1, include_self=False).subset(IonChannel)
     for node in channels.values():
       node.before_integral(self.V.value)
@@ -211,9 +207,6 @@ class MultiCompartment(HHTypedNeuron):
 
   def after_integral(self, *args):
     self.V.value = self.sum_delta_inputs(init=self.V.value)
-    self.spike.value = (self.spk_fun((self.V_th - self._last_V).to_decimal(bu.mV)) *
-                        self.spk_fun((self.V.value - self.V_th).to_decimal(bu.mV)))
-
     channels = self.nodes(level=1, include_self=False).subset(IonChannel)
     for node in channels.values():
       node.after_integral(self.V.value)

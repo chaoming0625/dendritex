@@ -35,9 +35,9 @@ class HH(dx.neurons.SingleCompartment):
     self.IL = dx.channels.IL(size, E=-54.387 * bu.mV, g_max=0.03 * (bu.mS / bu.cm ** 2))
 
   def step_fun(self, t):
-    # dx.euler_step(hh, t, 10 * bu.nA)
-    # dx.rk2_step(hh, t, 10 * bu.nA)
-    # dx.rk3_step(hh, t, 10 * bu.nA)
+    # dx.euler_step(hh, t, 10 * u.nA)
+    # dx.rk2_step(hh, t, 10 * u.nA)
+    # dx.rk3_step(hh, t, 10 * u.nA)
     dx.rk4_step(self, t, 10 * bu.nA)
     return self.V.value
 
