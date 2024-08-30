@@ -1046,6 +1046,8 @@ class IKv11_Ak2007(PotassiumChannel):
       mode: Optional[bst.mixin.Mode] = None,
   ):
 
+
+
     super().__init__(
       size,
       name=name,
@@ -1071,6 +1073,7 @@ class IKv11_Ak2007(PotassiumChannel):
     self.ckb = 12.42101
     self.zn = 2.7978
 
+
   def init_state(self, V, K: IonInfo, batch_size=None):
     self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
 
@@ -1084,12 +1087,15 @@ class IKv11_Ak2007(PotassiumChannel):
   def compute_derivative(self, V, K: IonInfo):
     self.p.derivative = self.phi * (self.f_p_alpha(V) * (1. - self.p.value) - self.f_p_beta(V) * self.p.value) / bu.ms
 
+
+
   def current(self, V, K: IonInfo):
     if self.gateCurrent == 0:
       ik = self.g_max * self.p.value ** 4 * (K.E - V)
     else:
       ngateFlip = self.phi * (self.f_p_alpha(V) * (1. - self.p.value) - self.f_p_beta(V) * self.p.value) / bu.ms
       igate = (1e12) * self.g_max / self.gunit * 1e6 * self.e0 * 4 * self.zn * ngateFlip  # NONSPECIFIC_CURRENT igate
+
       ik = -igate + self.g_max * self.p.value ** 4 * (K.E - V)
     return ik
 
@@ -1119,6 +1125,7 @@ class IKv34_Ma2020(PotassiumChannel):
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
   ):
+
     super().__init__(
       size,
       name=name,
@@ -1190,7 +1197,6 @@ class IKv34_Ma2020(PotassiumChannel):
       (1.2202e-05 + .012 * bu.math.exp(-((V - (-56.3)) / 49.6) ** 2))
     )
     return 1000 * htau_func
-
 
 class IKv43_Ma2020(PotassiumChannel):
   r"""

@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 
-
 import numpy as np
 loaded_params = np.load('golgi_morphology.npz')
 

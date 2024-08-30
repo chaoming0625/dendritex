@@ -17,6 +17,7 @@ from ..ions import Calcium, Potassium
 
 __all__ = [
   'IAHP_De1994',
+  'IKca3_1_Ma2020',
 ]
 
 
@@ -136,3 +137,70 @@ class IAHP_De1994(KCaChannel):
     else:
       self.p.value = bu.math.broadcast_to(C2 / C3, (batch_size,) + self.varshape)
       assert self.p.value.shape[0] == batch_size
+
+
+class IKca3_1_Ma2020(KCaChannel):
+  r'''
+    TITLE Calcium dependent potassium channel
+  : Implemented in Rubin and Cleland (2006) J Neurophysiology
+  : Parameters from Bhalla and Bower (1993) J Neurophysiology
+  : Adapted from /usr/local/neuron/demo/release/nachan.mod - squid
+  :   by Andrew Davison, The Babraham Institute  [Brain Res Bulletin, 2000]
+  '''
+  __module__ = 'dendritex.channels'
+
+  root_type = bst.mixin.JointTypes[Potassium ,Calcium]
+
+  def __init__(
+      self,
+      size: bst.typing.Size,
+      g_max: Union[bst.typing.ArrayLike, Callable] = 120. * (bu.mS / bu.cm ** 2),
+      T_base: bst.typing.ArrayLike = 3.,
+      T: bst.typing.ArrayLike = 22,
+      name: Optional[str] = None,
+      mode: Optional[bst.mixin.Mode] = None,
+  ):
+    super().__init__(
+      size=size,
+      name=name,
+      mode=mode
+    )
+
+    # parameters
+    self.T = bst.init.param(T, self.varshape, allow_none=False)
+    self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
+    self.phi = bst.init.param(T_base ** ((T - 37) / 10), self.varshape, allow_none=False)
+    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
+
+    self.p_beta =0.05
+
+  def current(self, V, K: IonInfo, Ca: IonInfo):
+    return self.g_max * self.p.value * (K.E - V)
+  
+  def p_tau(self,V, Ca):
+    return 1/(self.p_alpha(V,Ca) + self.p_beta)
+  
+  def p_inf(self, V , Ca):
+    return self.p_alpha(V,Ca)/(self.p_alpha(V,Ca) + self.p_beta)
+  
+  def p_alpha(self, V ,Ca):
+    V = V / bu.mV
+    return self.p_vdep(V) * self.p_concdep(Ca)
+  
+  def p_vdep(self, V ):
+    return bu.math.exp((V+70.)/27.)
+  
+  def p_concdep(self, Ca):
+    concdep_1 = 500 * (0.015-Ca.C/ bu.mM)/( bu.math.exp((0.015-Ca.C/bu.mM)/0.0013) -1 )
+    concdep_2 = 500 * 0.005/( bu.math.exp(0.005/0.0013) -1 )
+    return bu.math.where(Ca.C/bu.mM<0.01,concdep_1,concdep_2)
+  
+  def init_state(self, V, K: IonInfo, Ca: IonInfo, batch_size=None):
+    self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+    self.reset_state(V,K,Ca)
+
+  def reset_state(self, V, K: IonInfo, Ca: IonInfo, batch_size=None):
+    self.p.value = self.p_inf(V,Ca)
+
+  def compute_derivative(self, V, K: IonInfo, Ca: IonInfo):
+    self.p.derivative = self.phi * (self.p_inf(V,Ca) - self.p.value) / self.p_tau(V,Ca) / bu.ms

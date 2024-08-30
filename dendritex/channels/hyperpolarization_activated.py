@@ -15,6 +15,8 @@ from .._base import Channel, HHTypedNeuron, State4Integral
 
 __all__ = [
   'Ih_HM1992',
+  'Ih1_Ma2020',
+  'Ih2_Ma2020',
 ]
 
 
@@ -28,7 +30,7 @@ class Ih_HM1992(Channel):
   .. math::
 
       \begin{aligned}
-      I_h &= g_{\mathrm{max}} p \\
+      I_h &= g_{\mathrm{max}} p \\  
       \frac{dp}{dt} &= \phi \frac{p_{\infty} - p}{\tau_p} \\
       p_{\infty} &=\frac{1}{1+\exp ((V+75) / 5.5)} \\
       \tau_{p} &=\frac{1}{\exp (-0.086 V-14.59)+\exp (0.0701 V-1.87)}
@@ -239,6 +241,207 @@ class Ih_HM1992(Channel):
 #     return 1 / (1 + u.math.exp((V + 75 - self.V_sh) / 5.5))
 #
 #   def f_tau(self, V):
-#     V = V.to_decimal(u.mV)
-#     return (20. + 1000 / (u.math.exp((V + 71.5 - self.V_sh) / 14.2) +
-#                           u.math.exp(-(V + 89 - self.V_sh) / 11.6))) / self.phi
+
+#     V = V.to_decimal(bu.mV)
+#     return (20. + 1000 / (bu.math.exp((V + 71.5 - self.V_sh) / 14.2) +
+#                           bu.math.exp(-(V + 89 - self.V_sh) / 11.6))) / self.phi
+
+
+class Ih1_Ma2020(Channel):
+  r"""
+  TITLE Cerebellum Golgi Cell Model
+
+  COMMENT
+
+  Author:L. Forti & S. Solinas
+  Data from: Santoro et al. J Neurosci. 2000
+  Last revised: April 2006
+
+  From Golgi_hcn1 to HCN1
+
+  """
+  __module__ = 'dendritex.channels'
+
+  root_type = HHTypedNeuron
+
+  def __init__(
+      self,
+      size: bst.typing.Size,
+      g_max: Union[bst.typing.ArrayLike, Callable] = 5e-2 * (bu.mS / bu.cm ** 2),
+      E: Union[bst.typing.ArrayLike, Callable] = -20 * bu.mV,
+      V_sh: Union[bst.typing.ArrayLike, Callable] = 0. * bu.mV,
+      T_base_g: bst.typing.ArrayLike = 1.5,
+      T_base_channel: bst.typing.ArrayLike = 3.,
+      T: bst.typing.ArrayLike = 22,
+      name: Optional[str] = None,
+      mode: Optional[bst.mixin.Mode] = None,
+  ):
+    super().__init__(
+      size,
+      name=name,
+      mode=mode
+    )
+
+    # parameters
+    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
+    self.E = bst.init.param(E, self.varshape, allow_none=False)
+    self.T = bst.init.param(T, self.varshape, allow_none=False)
+    self.T_base_g = bst.init.param(T_base_g, self.varshape, allow_none=False)
+    self.T_base_channel = bst.init.param(T_base_channel, self.varshape, allow_none=False)
+    self.phi_g = bst.init.param(T_base_g ** ((T - 23) / 10), self.varshape, allow_none=False)
+    self.phi_channel = bst.init.param(T_base_channel ** ((T - 23) / 10), self.varshape, allow_none=False)
+    self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
+
+
+    self.Ehalf = -72.49
+    self.c = 0.11305
+
+    self.rA = 0.002096
+    self.rB = 0.97596
+    self.tCf = 0.01371
+    self.tDf = -3.368
+    self.tEf = 2.302585092
+    self.tCs = 0.01451
+    self.tDs = -4.056
+    self.tEs = 2.302585092
+
+  def init_state(self, V, batch_size=None):
+    self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+    self.q = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+
+  def reset_state(self, V, batch_size=None):
+    self.p.value = self.f_p_inf(V)
+    self.q.value = self.f_q_inf(V)
+
+  def before_integral(self, V):
+    pass
+
+  def compute_derivative(self, V):
+    self.p.derivative = self.phi_channel * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V) / bu.ms
+    self.q.derivative = self.phi_channel * (self.f_q_inf(V) - self.q.value) / self.f_q_tau(V) / bu.ms
+
+  def after_integral(self, V):
+    pass
+
+  def current(self, V):
+    return self.phi_g * self.g_max * (self.p.value + self.q.value) * (self.E - V)
+
+  def f_p_inf(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.r(V) / (1 + bu.math.exp((V - self.Ehalf) * self.c))
+
+  def f_q_inf(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return (1 - self.r(V))  / (1 + bu.math.exp((V - self.Ehalf) * self.c))
+  def f_p_tau(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return bu.math.exp(((self.tCf * V) - self.tDf) * self.tEf) 
+  
+  def f_q_tau(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return bu.math.exp(((self.tCs * V) - self.tDs) * self.tEs) 
+  
+  def r(self, V):
+      return self.rA * V + self.rB
+
+
+class Ih2_Ma2020(Channel):
+  r"""
+  TITLE Cerebellum Golgi Cell Model
+
+  COMMENT
+
+  Author:L. Forti & S. Solinas
+  Data from: Santoro et al. J Neurosci. 2000
+  Last revised: April 2006
+  """
+  __module__ = 'dendritex.channels'
+
+  root_type = HHTypedNeuron
+
+  def __init__(
+      self,
+      size: bst.typing.Size,
+      g_max: Union[bst.typing.ArrayLike, Callable] = 8e-2 * (bu.mS / bu.cm ** 2),
+      E: Union[bst.typing.ArrayLike, Callable] = -20 * bu.mV,
+      V_sh: Union[bst.typing.ArrayLike, Callable] = 0. * bu.mV,
+      T_base_g: bst.typing.ArrayLike = 1.5,
+      T_base_channel: bst.typing.ArrayLike = 3.,
+      T: bst.typing.ArrayLike = 22,
+      name: Optional[str] = None,
+      mode: Optional[bst.mixin.Mode] = None,
+  ):
+    super().__init__(
+      size,
+      name=name,
+      mode=mode
+    )
+
+    # parameters
+    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
+    self.E = bst.init.param(E, self.varshape, allow_none=False)
+    self.T = bst.init.param(T, self.varshape, allow_none=False)
+    self.T_base_g = bst.init.param(T_base_g, self.varshape, allow_none=False)
+    self.T_base_channel = bst.init.param(T_base_channel, self.varshape, allow_none=False)
+    self.phi_g = bst.init.param(T_base_g ** ((T - 23) / 10), self.varshape, allow_none=False)
+    self.phi_channel = bst.init.param(T_base_channel ** ((T - 23) / 10), self.varshape, allow_none=False)
+    self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
+
+
+    self.Ehalf = -81.95
+    self.c = 0.1661 
+
+    self.rA = -0.0227
+    self.rB = -1.4694
+    self.tCf = 0.0269
+    self.tDf = -5.6111
+    self.tEf = 2.3026
+    self.tCs = 0.0152
+    self.tDs = -5.2944
+    self.tEs = 2.3026
+
+
+  def init_state(self, V, batch_size=None):
+    self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+    self.q = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+
+  def reset_state(self, V, batch_size=None):
+    self.p.value = self.f_p_inf(V)
+    self.q.value = self.f_q_inf(V)
+
+  def before_integral(self, V):
+    pass
+
+  def compute_derivative(self, V):
+    self.p.derivative = self.phi_channel * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V) / bu.ms
+    self.q.derivative = self.phi_channel * (self.f_q_inf(V) - self.q.value) / self.f_q_tau(V) / bu.ms
+
+  def after_integral(self, V):
+    pass
+
+  def current(self, V):
+    return self.phi_g * self.g_max * (self.p.value + self.q.value) * (self.E - V)
+
+  def f_p_inf(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return self.r(V,self.rA,self.rB) / (1 + bu.math.exp((V - self.Ehalf) * self.c))
+
+  def f_q_inf(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return (1 - self.r(V,self.rA,self.rB))  / (1 + bu.math.exp((V - self.Ehalf) * self.c))
+  def f_p_tau(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return bu.math.exp(((self.tCf * V) - self.tDf) * self.tEf) 
+  
+  def f_q_tau(self, V):
+    V = (V - self.V_sh) / bu.mV
+    return bu.math.exp(((self.tCs * V) - self.tDs) * self.tEs) 
+  
+  def r(self, V, r1, r2):
+    
+    return bu.math.where(V >= -64.70, 
+                0, 
+                bu.math.where(V <= -108.70, 
+                          1, 
+                          r1 * V + r2))
+

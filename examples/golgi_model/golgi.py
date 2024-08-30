@@ -27,6 +27,7 @@ import dendritex as dx
 
 bst.environ.set(precision=64)
 
+
 ## morphology params
 loaded_params = np.load('golgi_morphology.npz')
 
@@ -47,6 +48,7 @@ index_dend_apical = loaded_params['index_dend_apical']
 
 ## conductvalues 
 conductvalues = 1e3 * np.array([
+
   0.00499506303209, 0.01016375552607, 0.00247172479141, 0.00128859564935,
   3.690771983E-05, 0.0080938853146, 0.01226052748146, 0.01650689958385,
   0.00139885617712, 0.14927733727426, 0.00549507510519, 0.14910988921938,
@@ -69,15 +71,19 @@ gkv11[index_soma] = conductvalues[10]
 
 ## Kv34 params 
 gkv34 = np.zeros(n_compartments)
+
 gkv34[index_soma] = conductvalues[11]
 gkv34[index_axon[1:]] = 9.1
 
 ## Kv43 params 
+
 gkv43 = np.zeros(n_compartments)
+
 gkv43[index_soma] = conductvalues[12]
 
 
 class Golgi(dx.neurons.MultiCompartment):
+
   def __init__(self, size, connection, Ra, cm, diam, L, gl, gkv11):
     super().__init__(
       size=size,
@@ -186,3 +192,4 @@ def visualize_a_simulate(Ra, cm, diam, L, gl, gkv11):
 
 
 visualize_a_simulate(Ra, cm, diam, L, gl, gkv11)
+
