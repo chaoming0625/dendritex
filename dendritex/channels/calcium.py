@@ -1015,7 +1015,7 @@ class ICav23_Ma2020(CalciumChannel):
   
   
 
-class ICaV31_Ma2020(CalciumChannel):
+class ICav31_Ma2020(CalciumChannel):
   r'''
   TITLE Low threshold calcium current Cerebellum Purkinje Cell Model
 
