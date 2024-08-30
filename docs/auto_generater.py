@@ -27,7 +27,7 @@ def get_class_funcs(module):
   return classes, functions, others
 
 
-def _write_module(module_name, automodule, filename, header=None,  template=False):
+def _write_module(module_name, automodule, filename, header=None, template=False):
   module = importlib.import_module(module_name)
   classes, functions, others = get_class_funcs(module)
 
@@ -268,12 +268,24 @@ def _import(mod, klass=None, is_jax=False):
 def main():
   os.makedirs('apis/', exist_ok=True)
 
-  # _write_module(module_name='dendritex.math._misc',
-  #               automodule='brainunit.math',
-  #               filename='apis/brainunit.math.misc.rst',
-  #               header='Other Functions',
-  #               template=True)
+  _write_module(module_name='dendritex._integrators',
+                automodule='dendritex',
+                filename='apis/integration.rst',
+                header='Numerical Integration Methods',
+                template=True)
 
+  module_and_name = [
+    ('single_compartment', 'Single-Compartment Neuron Models'),
+    ('multi_compartment', 'Multi-Compartment Neuron Models'),
+  ]
+
+  _write_submodules(
+    module_name='dendritex.neurons',
+    filename='apis/dendritex.neurons.rst',
+    header='``dendritex.neurons`` module',
+    submodule_names=[k[0] for k in module_and_name],
+    section_names=[k[1] for k in module_and_name]
+  )
 
   module_and_name = [
     ('calcium', 'Calcium Ions'),
@@ -281,11 +293,13 @@ def main():
     ('sodium', 'Sodium Ions'),
   ]
 
-  _write_submodules(module_name='dendritex.ions',
-                    filename='apis/dendritex.ions.rst',
-                    header='``dendritex.ions`` module',
-                    submodule_names=[k[0] for k in module_and_name],
-                    section_names=[k[1] for k in module_and_name])
+  _write_submodules(
+    module_name='dendritex.ions',
+    filename='apis/dendritex.ions.rst',
+    header='``dendritex.ions`` module',
+    submodule_names=[k[0] for k in module_and_name],
+    section_names=[k[1] for k in module_and_name]
+  )
 
   module_and_name = [
     ('calcium', 'Calcium Channels'),
@@ -296,11 +310,13 @@ def main():
     ('sodium', 'Sodium Channels'),
   ]
 
-  _write_submodules(module_name='dendritex.channels',
-                    filename='apis/dendritex.channels.rst',
-                    header='``dendritex.channels`` module',
-                    submodule_names=[k[0] for k in module_and_name],
-                    section_names=[k[1] for k in module_and_name])
+  _write_submodules(
+    module_name='dendritex.channels',
+    filename='apis/dendritex.channels.rst',
+    header='``dendritex.channels`` module',
+    submodule_names=[k[0] for k in module_and_name],
+    section_names=[k[1] for k in module_and_name]
+  )
 
 
 if __name__ == '__main__':

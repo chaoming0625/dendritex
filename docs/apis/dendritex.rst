@@ -22,18 +22,3 @@ Base Classes
     MixIons
     Channel
 
-
-Integration Methods
---------------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-   :template: classtemplate.rst
-
-    euler_step
-    rk2_step
-    rk3_step
-    rk4_step
-
-

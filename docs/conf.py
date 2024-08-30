@@ -33,9 +33,7 @@ import shutil
 sys.path.insert(0, os.path.abspath('../'))
 
 import dendritex
-
 os.makedirs('apis/', exist_ok=True)
-
 changelogs = [
   ('../changelog.md', 'apis/changelog.md'),
 ]
@@ -43,6 +41,11 @@ for source, dest in changelogs:
   if os.path.exists(dest):
     os.remove(dest)
   shutil.copyfile(source, dest)
+
+import auto_generater
+
+auto_generater.main()
+
 
 
 # -- Project information -----------------------------------------------------

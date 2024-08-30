@@ -425,7 +425,8 @@ class Ion(IonChannel, Container):
     self._external_currents[key] = fun
 
   def pack_info(self):
-    E = self.E.value if isinstance(self.E, bst.State) else self.E
+    E = self.E
+    E = E.value if isinstance(E, bst.State) else E
     C = self.C.value if isinstance(self.C, bst.State) else self.C
     return IonInfo(E=E, C=C)
 

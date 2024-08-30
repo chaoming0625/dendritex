@@ -209,6 +209,6 @@ def fitting_example(method='L-BFGS-B', n_sample=1):
 
 if __name__ == '__main__':
   pass
-  # visualize_a_simulate(np.random.rand(1000, 3) * bu.nA, np.asarray([0.12, 0.036, 0.0003, 0.001, 0.001]))
+  # visualize_a_simulate(np.random.rand(1000, 3) * u.nA, np.asarray([0.12, 0.036, 0.0003, 0.001, 0.001]))
   fitting_example()
 
