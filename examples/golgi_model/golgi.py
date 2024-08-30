@@ -13,9 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-
 import time
-
 import brainstate as bst
 import braintools as bts
 import brainunit as u
@@ -26,7 +24,6 @@ import numpy as np
 import dendritex as dx
 
 bst.environ.set(precision=64)
-
 
 ## morphology params
 loaded_params = np.load('golgi_morphology.npz')
@@ -57,7 +54,7 @@ conductvalues = 1e3 * np.array([
   0.00024381226198, 0.10008178886943, 0.00595046001148, 0.0115, 0.0091
 ])
 
-## IL params
+## IL 
 gl = np.ones(n_compartments)
 gl[index_soma] = 0.03
 gl[index_axon] = 0.001
@@ -65,25 +62,56 @@ gl[index_axon[0]] = 0.03
 gl[index_dend_basal] = 0.03
 gl[index_dend_apical] = 0.03
 
-## Kv11 params
+## IKv11_Ak2007
 gkv11 = np.zeros(n_compartments)
 gkv11[index_soma] = conductvalues[10]
 
-## Kv34 params 
+## IKv34_Ma2020  
 gkv34 = np.zeros(n_compartments)
-
 gkv34[index_soma] = conductvalues[11]
 gkv34[index_axon[1:]] = 9.1
 
-## Kv43 params 
-
+## IKv43_Ma2020
 gkv43 = np.zeros(n_compartments)
-
 gkv43[index_soma] = conductvalues[12]
+
+## ICaGrc_Ma2020
+gcagrc = np.zeros(n_compartments)
+gcagrc[index_soma] = conductvalues[15]
+gcagrc[index_dend_basal] = conductvalues[8]
+gcagrc[index_axon[0]] = conductvalues[22]
+
+## ICav23_Ma2020
+gcav23 =  np.zeros(n_compartments)
+gcav23[index_dend_apical] = conductvalues[3]
+
+## ICav31_Ma2020 
+gcav31 =  np.zeros(n_compartments)
+gcav31[index_soma] = conductvalues[16]
+gcav31[index_dend_apical] = conductvalues[4]
+
+## INa_Rsg
+gnarsg = np.zeros(n_compartments)
+gnarsg [index_soma] = conductvalues[9]
+gnarsg[index_dend_apical] = conductvalues[0]
+gnarsg[index_dend_basal] =  conductvalues[5]
+gnarsg[index_axon[0]] = conductvalues[19]
+gnarsg[index_axon[1:]] = 11.5
+
+## Ih1_Ma2020 
+gh1 = np.zeros(n_compartments)
+gh1[index_axon[0]] = conductvalues[17]
+
+## Ih1_Ma2020 
+gh2 = np.zeros(n_compartments)
+gh2[index_axon[0]] = conductvalues[18]
+
+## IKca3_1_Ma2020 
+gkca31 = np.zeros(n_compartments)
+gkca31[index_soma] =  conductvalues[14]
 
 
 class Golgi(dx.neurons.MultiCompartment):
-
   def __init__(self, size, connection, Ra, cm, diam, L, gl, gkv11):
     super().__init__(
       size=size,
@@ -148,7 +176,6 @@ def simulate2(Ra, cm, diam, L, gl, gkv11):
   with bst.environ.context(dt=dt):
     ys = bst.transform.for_loop(step_run, ts)
   return ts, ys[::10], ts.size
-
 
 def visualize_a_simulate(Ra, cm, diam, L, gl, gkv11):
   t0 = time.time()
