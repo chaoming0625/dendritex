@@ -110,6 +110,20 @@ gh2[index_axon[0]] = conductvalues[18]
 gkca31 = np.zeros(n_compartments)
 gkca31[index_soma] =  conductvalues[14]
 
+## IKca2_2_Ma2020
+gkca22 = np.zeros(n_compartments)
+gkca31[index_dend_apical] =  conductvalues[2]
+gkca31[index_dend_basal] =  conductvalues[7]
+
+## IKca1_1_Ma2020
+gkca11 = np.zeros(n_compartments)
+gkca11[index_soma]= conductvalues[13]
+gkca11[index_dend_apical]= conductvalues[1]
+gkca11[index_dend_basal]= conductvalues[6]
+gkca11[index_axon[0]] = conductvalues[21]
+gkca11[index_axon[1:]] = conductvalues[13]
+
+##
 
 class Golgi(dx.neurons.MultiCompartment):
   def __init__(self, size, connection, Ra, cm, diam, L, gl, gkv11):
