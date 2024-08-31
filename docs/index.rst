@@ -33,6 +33,15 @@ Installation
           pip install -U dendritex[tpu] -f https://storage.googleapis.com/jax-releases/libtpu_releases.html
 
 
+----
+
+
+See also the BDP ecosystem
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+We are building the `BDP ecosystem <https://ecosystem-for-brain-dynamics.readthedocs.io/>`_:
+
 
 
 
