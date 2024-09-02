@@ -777,179 +777,13 @@ class ICaL_IS2008(_ICa_p2q_ss):
   def f_q_tau(self, V):
     V = (V - self.V_sh).to_decimal(bu.mV)
     return 300. + 100. / (bu.math.exp((V + 40) / 9.5) + bu.math.exp(-(V + 40) / 9.5))
-  
+
 
 class ICav12_Ma2020(CalciumChannel):
-  r'''
+  r"""
   : model from Evans et al 2013, transferred from GENESIS to NEURON by Beining et al (2016), "A novel comprehensive and consistent electrophysiologcal model of dentate granule cells"
   : also added Calcium dependent inactivation
-  '''
-
-  __module__ = 'dendritex.channels'
-
-  root_type = Calcium
-
-  def __init__(
-      self,
-      size: bst.typing.Size,
-      g_max: Union[bst.typing.ArrayLike, Callable] = 0 * (bu.mS / bu.cm**2),
-      V_sh: Union[bst.typing.ArrayLike, Callable] = 0 * bu.mV,
-      T_base: bst.typing.ArrayLike = 3 ,
-      T: bst.typing.ArrayLike = 22.,
-      name: Optional[str] = None,
-      mode: Optional[bst.mixin.Mode] = None,
-  ):
-    super().__init__(
-      size=size,
-      name=name,
-      mode=mode
-    )
-
-    # parameters
-    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
-    self.T = bst.init.param(T, self.varshape, allow_none=False)
-    self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
-    self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
-    self.phi = bst.init.param( 1., self.varshape, allow_none=False)
-
-    self.kf = 0.0005
-    self.VDI =  0.17
-  
-
-
-  def init_state(self, V, Ca: IonInfo, batch_size: int = None):
-    self.m = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-    self.h = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-    self.n = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-
-  def reset_state(self, V, Ca, batch_size=None):
-    self.m.value =  self.f_m_inf(V)
-    self.h.value =  self.f_h_inf(V)
-    self.n.value =  self.f_n_inf(V,Ca)
-
-  def compute_derivative(self, V, Ca):
-    self.m.derivative = self.phi * (self.f_m_inf(V) - self.m.value) / self.f_m_tau(V) / bu.ms
-    self.h.derivative = self.phi * (self.f_h_inf(V) - self.h.value) / self.f_h_tau(V) / bu.ms
-    self.n.derivative = self.phi * (self.f_n_inf(V,Ca) - self.n.value) / self.f_n_tau(V) / bu.ms
-
-  def f_m_inf(self, V):
-    V = V / bu.mV
-    return 1/(1 + bu.math.exp((V + 8.9)/(-6.7)))
-  def f_h_inf(self, V):
-    V = V / bu.mV
-    return self.VDI/(1 + bu.math.exp((V +55)/8)) + (1-self.VDI)
-  
-  def f_n_inf(self, V, Ca):
-    V = V / bu.mV
-    return bu.math.ones_like(V)*self.kf/(self.kf + Ca.C/bu.mM)
-  
-  def f_m_tau(self, V):
-    V = V / bu.mV
-    mA = 39800*(V + 8.124)/(bu.math.exp((V + 8.124)/9.005) - 1)
-    mB = 990*bu.math.exp(V/31.4)
-    return 1/(mA + mB)
-  
-  def f_h_tau(self, V):
-    return 44.3
-  
-  def f_n_tau(self, V):
-    return  0.5
-    
-
-  def current(self, V, Ca: IonInfo):
-    return self.g_max * self.m.value * self.h.value * self.n.value * (Ca.E - V)
-  
-class ICav13_Ma2020(CalciumChannel):
-  r'''
-  : model from Evans et al 2013, transferred from GENESIS to NEURON by Beining et al (2016), "A novel comprehensive and consistent electrophysiologcal model of dentate granule cells"
-  : also added Calcium dependent inactivation
-  '''
-  __module__ = 'dendritex.channels'
-
-  root_type = Calcium
-
-  def __init__(
-      self,
-      size: bst.typing.Size,
-      g_max: Union[bst.typing.ArrayLike, Callable] = 0 * (bu.mS / bu.cm **2),
-      V_sh: Union[bst.typing.ArrayLike, Callable] = 0 * bu.mV,
-      T_base: bst.typing.ArrayLike = 3 ,
-      T: bst.typing.ArrayLike = 22.,
-      name: Optional[str] = None,
-      mode: Optional[bst.mixin.Mode] = None,
-  ):
-    super().__init__(
-      size=size,
-      name=name,
-      mode=mode
-    )
-
-    # parameters
-    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
-    self.T = bst.init.param(T, self.varshape, allow_none=False)
-    self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
-    self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
-    self.phi = bst.init.param( 1., self.varshape, allow_none=False)
-
-    self.kf = 0.0005
-    self.VDI = 1
-   
-
-
-  def init_state(self, V, Ca: IonInfo, batch_size: int = None):
-    self.m = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-    self.h = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-    self.n = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-
-  def reset_state(self, V, Ca, batch_size=None):
-    self.m.value =  self.f_m_inf(V)
-    self.h.value =  self.f_h_inf(V)
-    self.n.value =  self.f_n_inf(V,Ca)
-
-  def compute_derivative(self, V, Ca):
-    self.m.derivative = self.phi * (self.f_m_inf(V) - self.m.value) / self.f_m_tau(V) / bu.ms
-    self.h.derivative = self.phi * (self.f_h_inf(V) - self.h.value) / self.f_h_tau(V) / bu.ms
-    self.n.derivative = self.phi * (self.f_n_inf(V,Ca) - self.n.value) / self.f_n_tau(V) / bu.ms
-
-
-
-  def f_m_inf(self, V):
-    V = V / bu.mV
-    return 1.0/((bu.math.exp ( (V - (-40.0))/(-5))) + 1.0)
-  def f_h_inf(self, V):
-    V = V / bu.mV
-    return self.VDI/( (bu.math.exp ( (V - (-37))/(5))) + 1.0) + (1-self.VDI)
-  
-  def f_n_inf(self, V, Ca):
-    V = V / bu.mV
-    return bu.math.ones_like(V)*self.kf/(self.kf + Ca.C/bu.mM) 
-  
-  def f_m_tau(self, V):
-    V = V / bu.mV
-    mA = (39800*( V + 67.24))/( bu.math.exp ( (V + 67.24)/15.005) - 1.0)
-    mB = 3500* bu.math.exp(V/31.4) 
-    return 1/(mA + mB)
-  
-  def f_h_tau(self, V):
-    return 44.3
-  
-  def f_n_tau(self, V):
-    return  0.5
-  
-
-  def current(self, V, Ca: IonInfo):
-    return self.g_max * self.m.value * self.h.value * self.n.value * (Ca.E - V)
-  
-
-class ICav23_Ma2020(CalciumChannel):
-  r'''
-  TITLE Ca R-type channel with medium threshold for activation
-  : used in distal dendritic regions, together with calH.mod, to help
-  : the generation of Ca++ spikes in these regions
-  : uses channel conductance (not permeability)
-  : written by Yiota Poirazi on 11/13/00 poirazi@LNC.usc.edu
-  : From car to Cav2_3
-  '''
+  """
 
   __module__ = 'dendritex.channels'
 
@@ -960,7 +794,7 @@ class ICav23_Ma2020(CalciumChannel):
       size: bst.typing.Size,
       g_max: Union[bst.typing.ArrayLike, Callable] = 0 * (bu.mS / bu.cm ** 2),
       V_sh: Union[bst.typing.ArrayLike, Callable] = 0 * bu.mV,
-      T_base: bst.typing.ArrayLike = 3 ,
+      T_base: bst.typing.ArrayLike = 3,
       T: bst.typing.ArrayLike = 22.,
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
@@ -976,63 +810,59 @@ class ICav23_Ma2020(CalciumChannel):
     self.T = bst.init.param(T, self.varshape, allow_none=False)
     self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
-    self.phi = bst.init.param( 1., self.varshape, allow_none=False)
+    self.phi = bst.init.param(1., self.varshape, allow_none=False)
 
-    self.eca = 140 * bu.mV
-  
-
+    self.kf = 0.0005
+    self.VDI = 0.17
 
   def init_state(self, V, Ca: IonInfo, batch_size: int = None):
     self.m = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
     self.h = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-    
+    self.n = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
 
   def reset_state(self, V, Ca, batch_size=None):
-    self.m.value =  self.f_m_inf(V)
-    self.h.value =  self.f_h_inf(V)
-  
+    self.m.value = self.f_m_inf(V)
+    self.h.value = self.f_h_inf(V)
+    self.n.value = self.f_n_inf(V, Ca)
 
   def compute_derivative(self, V, Ca):
     self.m.derivative = self.phi * (self.f_m_inf(V) - self.m.value) / self.f_m_tau(V) / bu.ms
     self.h.derivative = self.phi * (self.f_h_inf(V) - self.h.value) / self.f_h_tau(V) / bu.ms
-
-
-  def current(self, V, Ca: IonInfo):
-      return self.g_max * self.m.value **3 * self.h.value *  (self.eca - V)
+    self.n.derivative = self.phi * (self.f_n_inf(V, Ca) - self.n.value) / self.f_n_tau(V) / bu.ms
 
   def f_m_inf(self, V):
-    V = V / bu.mV
-    return 1 / (1 + bu.math.exp((V+48.5)/(-3))) 
+    V = V.to_decimal(bu.mV)
+    return 1 / (1 + bu.math.exp((V + 8.9) / (-6.7)))
+
   def f_h_inf(self, V):
-    V = V / bu.mV
-    return 1/ (1 + bu.math.exp((V+53)/ 1.)) 
-  
+    V = V.to_decimal(bu.mV)
+    return self.VDI / (1 + bu.math.exp((V + 55) / 8)) + (1 - self.VDI)
+
+  def f_n_inf(self, V, Ca):
+    V = V.to_decimal(bu.mV)
+    return bu.math.ones_like(V) * self.kf / (self.kf + Ca.C / bu.mM)
+
   def f_m_tau(self, V):
-    return 50.
-  
+    V = V.to_decimal(bu.mV)
+    mA = 39800 * (V + 8.124) / (bu.math.exp((V + 8.124) / 9.005) - 1)
+    mB = 990 * bu.math.exp(V / 31.4)
+    return 1 / (mA + mB)
+
   def f_h_tau(self, V):
-    return 5.
-  
-  
+    return 44.3
 
-class ICav31_Ma2020(CalciumChannel):
-  r'''
-  TITLE Low threshold calcium current Cerebellum Purkinje Cell Model
+  def f_n_tau(self, V):
+    return 0.5
 
-  COMMENT
+  def current(self, V, Ca: IonInfo):
+    return self.g_max * self.m.value * self.h.value * self.n.value * (Ca.E - V)
 
-  Kinetics adapted to fit the Cav3.1 Iftinca et al 2006, Temperature dependence of T-type Calcium channel gating, NEUROSCIENCE
 
-  Reference: Anwar H, Hong S, De Schutter E (2010) Controlling Ca2+-activated K+ channels with models of Ca2+ buffering in Purkinje cell. Cerebellum*
-
-  *Article available as Open Access
-
-  PubMed link: http://www.ncbi.nlm.nih.gov/pubmed/20981513
-
-  Written by Haroon Anwar, Computational Neuroscience Unit, Okinawa Institute of Science and Technology, 2010.
-  Contact: Haroon Anwar (anwar@oist.jp)
-
-  '''
+class ICav13_Ma2020(CalciumChannel):
+  r"""
+  : model from Evans et al 2013, transferred from GENESIS to NEURON by Beining et al (2016), "A novel comprehensive and consistent electrophysiologcal model of dentate granule cells"
+  : also added Calcium dependent inactivation
+  """
   __module__ = 'dendritex.channels'
 
   root_type = Calcium
@@ -1040,9 +870,9 @@ class ICav31_Ma2020(CalciumChannel):
   def __init__(
       self,
       size: bst.typing.Size,
-      g_max: Union[bst.typing.ArrayLike, Callable] = 2.5e-4 * (bu.cm / bu.second),
+      g_max: Union[bst.typing.ArrayLike, Callable] = 0 * (bu.mS / bu.cm ** 2),
       V_sh: Union[bst.typing.ArrayLike, Callable] = 0 * bu.mV,
-      T_base: bst.typing.ArrayLike = 3  ,
+      T_base: bst.typing.ArrayLike = 3,
       T: bst.typing.ArrayLike = 22.,
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
@@ -1052,6 +882,161 @@ class ICav31_Ma2020(CalciumChannel):
       name=name,
       mode=mode
     )
+
+    # parameters
+    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
+    self.T = bst.init.param(T, self.varshape, allow_none=False)
+    self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
+    self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
+    self.phi = bst.init.param(1., self.varshape, allow_none=False)
+
+    self.kf = 0.0005
+    self.VDI = 1
+
+  def init_state(self, V, Ca: IonInfo, batch_size: int = None):
+    self.m = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+    self.h = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+    self.n = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+
+  def reset_state(self, V, Ca, batch_size=None):
+    self.m.value = self.f_m_inf(V)
+    self.h.value = self.f_h_inf(V)
+    self.n.value = self.f_n_inf(V, Ca)
+
+  def compute_derivative(self, V, Ca):
+    self.m.derivative = self.phi * (self.f_m_inf(V) - self.m.value) / self.f_m_tau(V) / bu.ms
+    self.h.derivative = self.phi * (self.f_h_inf(V) - self.h.value) / self.f_h_tau(V) / bu.ms
+    self.n.derivative = self.phi * (self.f_n_inf(V, Ca) - self.n.value) / self.f_n_tau(V) / bu.ms
+
+  def f_m_inf(self, V):
+    V = V.to_decimal(bu.mV)
+    return 1.0 / ((bu.math.exp((V - (-40.0)) / (-5))) + 1.0)
+
+  def f_h_inf(self, V):
+    V = V.to_decimal(bu.mV)
+    return self.VDI / ((bu.math.exp((V - (-37)) / 5)) + 1.0) + (1 - self.VDI)
+
+  def f_n_inf(self, V, Ca):
+    V = V.to_decimal(bu.mV)
+    return bu.math.ones_like(V) * self.kf / (self.kf + Ca.C / bu.mM)
+
+  def f_m_tau(self, V):
+    V = V.to_decimal(bu.mV)
+    # mA = (39800 * (V + 67.24)) / (bu.math.exp((V + 67.24) / 15.005) - 1.0)
+    mA = 39800 * 15.005 / bu.math.exprel((V + 67.24) / 15.005)
+    mB = 3500 * bu.math.exp(V / 31.4)
+    return 1 / (mA + mB)
+
+  def f_h_tau(self, V):
+    return 44.3
+
+  def f_n_tau(self, V):
+    return 0.5
+
+  def current(self, V, Ca: IonInfo):
+    return self.g_max * self.m.value * self.h.value * self.n.value * (Ca.E - V)
+
+
+class ICav23_Ma2020(CalciumChannel):
+  r"""
+  Ca R-type channel with medium threshold for activation.
+  
+  : used in distal dendritic regions, together with calH.mod, to help
+  : the generation of Ca++ spikes in these regions
+  : uses channel conductance (not permeability)
+  : written by Yiota Poirazi on 11/13/00 poirazi@LNC.usc.edu
+  : From car to Cav2_3
+  """
+
+  __module__ = 'dendritex.channels'
+
+  root_type = Calcium
+
+  def __init__(
+      self,
+      size: bst.typing.Size,
+      g_max: Union[bst.typing.ArrayLike, Callable] = 0 * (bu.mS / bu.cm ** 2),
+      V_sh: Union[bst.typing.ArrayLike, Callable] = 0 * bu.mV,
+      T_base: bst.typing.ArrayLike = 3,
+      T: bst.typing.ArrayLike = 22.,
+      name: Optional[str] = None,
+      mode: Optional[bst.mixin.Mode] = None,
+  ):
+    super().__init__(
+      size=size,
+      name=name,
+      mode=mode
+    )
+
+    # parameters
+    self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
+    self.T = bst.init.param(T, self.varshape, allow_none=False)
+    self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
+    self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
+    self.phi = bst.init.param(1., self.varshape, allow_none=False)
+
+    self.eca = 140 * bu.mV
+
+  def init_state(self, V, Ca: IonInfo, batch_size: int = None):
+    self.m = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+    self.h = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
+
+  def reset_state(self, V, Ca, batch_size=None):
+    self.m.value = self.f_m_inf(V)
+    self.h.value = self.f_h_inf(V)
+
+  def compute_derivative(self, V, Ca):
+    self.m.derivative = self.phi * (self.f_m_inf(V) - self.m.value) / self.f_m_tau(V) / bu.ms
+    self.h.derivative = self.phi * (self.f_h_inf(V) - self.h.value) / self.f_h_tau(V) / bu.ms
+
+  def current(self, V, Ca: IonInfo):
+    return self.g_max * self.m.value ** 3 * self.h.value * (self.eca - V)
+
+  def f_m_inf(self, V):
+    V = V.to_decimal(bu.mV)
+    return 1 / (1 + bu.math.exp((V + 48.5) / (-3)))
+
+  def f_h_inf(self, V):
+    V = V.to_decimal(bu.mV)
+    return 1 / (1 + bu.math.exp((V + 53) / 1.))
+
+  def f_m_tau(self, V):
+    return 50.
+
+  def f_h_tau(self, V):
+    return 5.
+
+
+class ICav31_Ma2020(CalciumChannel):
+  r"""
+  Low threshold calcium current Cerebellum Purkinje Cell Model.
+
+  Kinetics adapted to fit the Cav3.1 Iftinca et al 2006, Temperature dependence of T-type Calcium channel gating, NEUROSCIENCE
+
+  Reference: Anwar H, Hong S, De Schutter E (2010) Controlling Ca2+-activated K+ channels with models of Ca2+ buffering in Purkinje cell. Cerebellum
+
+  Article available as Open Access
+
+  PubMed link: http://www.ncbi.nlm.nih.gov/pubmed/20981513
+
+  Written by Haroon Anwar, Computational Neuroscience Unit, Okinawa Institute of Science and Technology, 2010.
+  Contact: Haroon Anwar (anwar@oist.jp)
+
+  """
+  __module__ = 'dendritex.channels'
+  root_type = Calcium
+
+  def __init__(
+      self,
+      size: bst.typing.Size,
+      g_max: Union[bst.typing.ArrayLike, Callable] = 2.5e-4 * (bu.cm / bu.second),
+      V_sh: Union[bst.typing.ArrayLike, Callable] = 0 * bu.mV,
+      T_base: bst.typing.ArrayLike = 3,
+      T: bst.typing.ArrayLike = 22.,
+      name: Optional[str] = None,
+      mode: Optional[bst.mixin.Mode] = None,
+  ):
+    super().__init__(size=size, name=name, mode=mode)
 
     # parameters
     self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
@@ -1078,59 +1063,62 @@ class ICav31_Ma2020(CalciumChannel):
     self.k_tau_h1 = 7
     self.z = 2
 
-
   def init_state(self, V, Ca: IonInfo, batch_size: int = None):
     self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
     self.q = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
 
   def reset_state(self, V, Ca, batch_size=None):
-    self.p.value =  self.f_p_inf(V)
-    self.q.value =  self.f_q_inf(V)
+    self.p.value = self.f_p_inf(V)
+    self.q.value = self.f_q_inf(V)
 
   def compute_derivative(self, V, Ca):
     self.p.derivative = self.phi * (self.f_p_inf(V) - self.p.value) / self.f_p_tau(V) / bu.ms
     self.q.derivative = self.phi * (self.f_q_inf(V) - self.q.value) / self.f_q_tau(V) / bu.ms
 
   def f_p_inf(self, V):
-    V = V / bu.mV
-    return 1.0 / ( 1 + bu.math.exp((V  - self.v0_m_inf)/self.k_m_inf) )
-  
+    V = V.to_decimal(bu.mV)
+    return 1.0 / (1 + bu.math.exp((V - self.v0_m_inf) / self.k_m_inf))
+
   def f_q_inf(self, V):
-    V = V / bu.mV
-    return  1.0 / ( 1 + bu.math.exp((V - self.v0_h_inf)/self.k_h_inf) )
-  
+    V = V.to_decimal(bu.mV)
+    return 1.0 / (1 + bu.math.exp((V - self.v0_h_inf) / self.k_h_inf))
+
   def f_p_tau(self, V):
-    V = V / bu.mV
-    return bu.math.where(V<=-90, 1, (self.C_tau_m + self.A_tau_m / (bu.math.exp((V - self.v0_tau_m1)/ self.k_tau_m1) + bu.math.exp((V - self.v0_tau_m2)/self.k_tau_m2))) )
+    V = V.to_decimal(bu.mV)
+    return bu.math.where(
+      V <= -90,
+      1.,
+      (self.C_tau_m + self.A_tau_m / (bu.math.exp((V - self.v0_tau_m1) / self.k_tau_m1) +
+                                      bu.math.exp((V - self.v0_tau_m2) / self.k_tau_m2)))
+    )
+
   def f_q_tau(self, V):
-    V = V / bu.mV
-    return ( self.C_tau_h + self.A_tau_h / bu.math.exp((V - self.v0_tau_h1)/self.k_tau_h1) )
-  
-  def ghk(self, V, Ca: IonInfo): 
+    V = V.to_decimal(bu.mV)
+    return self.C_tau_h + self.A_tau_h / bu.math.exp((V - self.v0_tau_h1) / self.k_tau_h1)
+
+  def ghk(self, V, Ca: IonInfo):
     E = (1e-3) * V
-    zeta = (self.z * bu.faraday_constant * E )/( bu.gas_constant  * (273.15 + self.T) * bu.kelvin)
-    zeta = zeta.to_decimal()
+    zeta = (self.z * bu.faraday_constant * E) / (bu.gas_constant * (273.15 + self.T) * bu.kelvin)
     ci = Ca.C
-    co = 2 * bu.mM  #co = Ca.C0 for Calciumdetailed
-    g_1 = (1e-6) * (self.z * bu.faraday_constant) * (ci - co * bu.math.exp(-zeta)) * (1 + zeta/2)
-    g_2= (1e-6) *( self.z * zeta * bu.faraday_constant) * (ci - co*bu.math.exp(-zeta)) / (1-bu.math.exp(-zeta))
-    return bu.math.where(bu.math.abs((1-bu.math.exp(-zeta))) <= 1e-6,g_1,g_2)
-  
+    co = 2 * bu.mM  # co = Ca.C0 for Calciumdetailed
+    g_1 = 1e-6 * (self.z * bu.faraday_constant) * (ci - co * bu.math.exp(-zeta)) * (1 + zeta / 2)
+    g_2 = 1e-6 * (self.z * zeta * bu.faraday_constant) * (ci - co * bu.math.exp(-zeta)) / (1 - bu.math.exp(-zeta))
+    return bu.math.where(bu.math.abs((1 - bu.math.exp(-zeta))) <= 1e-6, g_1, g_2)
+
   def current(self, V, Ca: IonInfo):
-    return -(1e3)*self.g_max * self.p.value ** 2 * self.q.value * self.ghk(V,Ca)
-  
+    return -1e3 * self.g_max * self.p.value ** 2 * self.q.value * self.ghk(V, Ca)
 
 
 class ICaGrc_Ma2020(CalciumChannel):
-  r'''
-  TITLE Cerebellum Granule Cell Model
+  r"""
+  Cerebellum Granule Cell Model.
 
   COMMENT
           CaHVA channel
     
     Author: E.D'Angelo, T.Nieus, A. Fontana
     Last revised: 8.5.2000
-  '''
+  """
 
   __module__ = 'dendritex.channels'
 
@@ -1141,7 +1129,7 @@ class ICaGrc_Ma2020(CalciumChannel):
       size: bst.typing.Size,
       g_max: Union[bst.typing.ArrayLike, Callable] = 0.46 * (bu.mS / bu.cm ** 2),
       V_sh: Union[bst.typing.ArrayLike, Callable] = 0 * bu.mV,
-      T_base: bst.typing.ArrayLike = 3 ,
+      T_base: bst.typing.ArrayLike = 3,
       T: bst.typing.ArrayLike = 22.,
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
@@ -1157,7 +1145,7 @@ class ICaGrc_Ma2020(CalciumChannel):
     self.T = bst.init.param(T, self.varshape, allow_none=False)
     self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
     self.V_sh = bst.init.param(V_sh, self.varshape, allow_none=False)
-    self.phi = bst.init.param( T_base ** ((T - 20) / 10), self.varshape, allow_none=False)
+    self.phi = bst.init.param(T_base ** ((T - 20) / 10), self.varshape, allow_none=False)
 
     self.eca = 129.33 * bu.mV
 
@@ -1177,56 +1165,45 @@ class ICaGrc_Ma2020(CalciumChannel):
     self.Kbeta_u = 83.33
     self.V0beta_u = -48
 
-
-
   def init_state(self, V, Ca: IonInfo, batch_size: int = None):
     self.m = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
     self.h = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-    
 
   def reset_state(self, V, Ca, batch_size=None):
-    self.m.value =  self.f_m_inf(V)
-    self.h.value =  self.f_h_inf(V)
-  
+    self.m.value = self.f_m_inf(V)
+    self.h.value = self.f_h_inf(V)
 
   def compute_derivative(self, V, Ca):
     self.m.derivative = self.phi * (self.f_m_inf(V) - self.m.value) / self.f_m_tau(V) / bu.ms
     self.h.derivative = self.phi * (self.f_h_inf(V) - self.h.value) / self.f_h_tau(V) / bu.ms
 
-
   def current(self, V, Ca: IonInfo):
-      return self.g_max * self.m.value ** 2 * self.h.value *  (self.eca - V)
+    return self.g_max * self.m.value ** 2 * self.h.value * (self.eca - V)
 
   def f_m_inf(self, V):
-    return self.alpha_m(V)/(self.alpha_m(V) + self.beta_m(V)) 
+    return self.alpha_m(V) / (self.alpha_m(V) + self.beta_m(V))
 
   def f_h_inf(self, V):
-    return  self.alpha_h(V)/(self.alpha_h(V) + self.beta_h(V)) 
-  
+    return self.alpha_h(V) / (self.alpha_h(V) + self.beta_h(V))
+
   def f_m_tau(self, V):
-    return 1./(self.alpha_m(V) + self.beta_m(V)) 
-  
+    return 1. / (self.alpha_m(V) + self.beta_m(V))
+
   def f_h_tau(self, V):
-    return 1./(self.alpha_h(V) + self.beta_h(V)) 
-  
-  def alpha_m(self, V) :
-    V = (V - self.V_sh) / bu.mV
+    return 1. / (self.alpha_h(V) + self.beta_h(V))
+
+  def alpha_m(self, V):
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return self.Aalpha_s * bu.math.exp((V - self.V0alpha_s) / self.Kalpha_s)
 
-  
-  def beta_m(self, V) :
-    V = (V - self.V_sh) / bu.mV
+  def beta_m(self, V):
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return self.Abeta_s * bu.math.exp((V - self.V0beta_s) / self.Kbeta_s)
 
-  
-  def alpha_h(self, V) :
-    V = (V - self.V_sh) / bu.mV
+  def alpha_h(self, V):
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return self.Aalpha_u * bu.math.exp((V - self.V0alpha_u) / self.Kalpha_u)
 
-  
-  def beta_h(self, V) :
-    V = (V - self.V_sh) / bu.mV
+  def beta_h(self, V):
+    V = (V - self.V_sh).to_decimal(bu.mV)
     return self.Abeta_u * bu.math.exp((V - self.V0beta_u) / self.Kbeta_u)
-
- 
- 
