@@ -242,9 +242,9 @@ class Ih_HM1992(Channel):
 #
 #   def f_tau(self, V):
 
-#     V = V.to_decimal(bu.mV)
-#     return (20. + 1000 / (bu.math.exp((V + 71.5 - self.V_sh) / 14.2) +
-#                           bu.math.exp(-(V + 89 - self.V_sh) / 11.6))) / self.phi
+#     V = V.to_decimal(u.mV)
+#     return (20. + 1000 / (u.math.exp((V + 71.5 - self.V_sh) / 14.2) +
+#                           u.math.exp(-(V + 89 - self.V_sh) / 11.6))) / self.phi
 
 
 class Ih1_Ma2020(Channel):
