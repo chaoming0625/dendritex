@@ -123,7 +123,9 @@ gkca11[index_dend_basal]= conductvalues[6]
 gkca11[index_axon[0]] = conductvalues[21]
 gkca11[index_axon[1:]] = conductvalues[13]
 
-##
+## IKM_Grc_Ma2020
+gkmgrc =  np.zeros(n_compartments)
+gkmgrc[index_axon[0]] = conductvalues[20]
 
 class Golgi(dx.neurons.MultiCompartment):
   def __init__(self, size, connection, Ra, cm, diam, L, gl, gkv11):
