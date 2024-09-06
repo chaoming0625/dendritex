@@ -195,7 +195,7 @@ class IKca3_1_Ma2020(KCaChannel):
     return bu.math.exp((V + 70.) / 27.)
 
   def p_concdep(self, Ca):
-    # concdep_1 = 500 * (0.015 - Ca.C / bu.mM) / (bu.math.exp((0.015 - Ca.C / bu.mM) / 0.0013) - 1)
+    # concdep_1 = 500 * (0.015 - Ca.C / u.mM) / (u.math.exp((0.015 - Ca.C / u.mM) / 0.0013) - 1)
     concdep_1 = 500 * 0.0013 / bu.math.exprel((0.015 - Ca.C / bu.mM) / 0.0013)
     with jax.ensure_compile_time_eval():
       concdep_2 = 500 * 0.005 / (bu.math.exp(0.005 / 0.0013) - 1)

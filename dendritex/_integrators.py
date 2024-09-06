@@ -15,7 +15,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Tuple, Callable, Dict
+from typing import Optional, Tuple, Callable, Dict, Union
 
 import brainstate as bst
 import brainunit as u
@@ -72,12 +72,17 @@ def _diffrax_solve(
     atol: Optional[float] = None,
     max_steps: int = None,
 ):
-  if adjoint == 'adjoint':
-    adjoint = dfx.BacksolveAdjoint()
-  elif adjoint == 'checkpoint':
-    adjoint = dfx.RecursiveCheckpointAdjoint()
-  elif adjoint == 'direct':
-    adjoint = dfx.DirectAdjoint()
+  if isinstance(adjoint, str):
+    if adjoint == 'adjoint':
+      adjoint = dfx.BacksolveAdjoint()
+    elif adjoint == 'checkpoint':
+      adjoint = dfx.RecursiveCheckpointAdjoint()
+    elif adjoint == 'direct':
+      adjoint = dfx.DirectAdjoint()
+    else:
+      raise ValueError(f"Unknown adjoint method: {adjoint}. Only support 'checkpoint', 'direct', and 'adjoint'.")
+  elif isinstance(adjoint, dfx.AbstractAdjoint):
+    adjoint = adjoint
   else:
     raise ValueError(f"Unknown adjoint method: {adjoint}. Only support 'checkpoint', 'direct', and 'adjoint'.")
 
@@ -280,7 +285,7 @@ def diffrax_solve(
     rtol: Optional[float] = None,
     atol: Optional[float] = None,
     max_steps: Optional[int] = None,
-    adjoint: str = 'checkpoint',
+    adjoint: Union[str, dfx.AbstractAdjoint] = 'checkpoint',
 ) -> Tuple[u.Quantity, bst.typing.PyTree[u.Quantity], Dict]:
   """
   Solve the differential equations using `diffrax <https://docs.kidger.site/diffrax>`_.
