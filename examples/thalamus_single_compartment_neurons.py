@@ -20,130 +20,173 @@ Implementation of the following models in the paper:
   multiple distinct oscillations with state-dependent entrainment by stimulation.”
   PLoS computational biology 13.10 (2017): e1005797.
 """
+import time
 
 import brainstate as bst
 import braintools as bts
-import brainunit as bu
+import brainunit as u
 import matplotlib.pyplot as plt
 
 import dendritex as dx
 
-S = bu.mS / bu.cm ** 2
+
+class HTC(dx.neurons.SingleCompartment):
+  def __init__(self, size, gKL=0.01 * (u.mS / u.cm ** 2), V_initializer=bst.init.Constant(-65. * u.mV)):
+    super().__init__(size, A=2.9e-4 * u.cm ** 2, V_initializer=V_initializer, V_th=20. * u.mV)
+
+    self.na = dx.ions.SodiumFixed(size, E=50. * u.mV)
+    self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-30 * u.mV))
+
+    self.k = dx.ions.PotassiumFixed(size, E=-90. * u.mV)
+    self.k.add_elem(IKL=dx.channels.IK_Leak(size, g_max=gKL))
+    self.k.add_elem(IDR=dx.channels.IKDR_Ba2002(size, V_sh=-30. * u.mV, phi=0.25))
+
+    self.ca = dx.ions.CalciumDetailed(size, C_rest=5e-5 * u.mM, tau=10. * u.ms, d=0.5 * u.um)
+    self.ca.add_elem(ICaL=dx.channels.ICaL_IS2008(size, g_max=0.5 * (u.mS / u.cm ** 2)))
+    self.ca.add_elem(ICaN=dx.channels.ICaN_IS2008(size, g_max=0.5 * (u.mS / u.cm ** 2)))
+    self.ca.add_elem(ICaT=dx.channels.ICaT_HM1992(size, g_max=2.1 * (u.mS / u.cm ** 2)))
+    self.ca.add_elem(ICaHT=dx.channels.ICaHT_HM1992(size, g_max=3.0 * (u.mS / u.cm ** 2)))
+
+    self.kca = dx.MixIons(self.k, self.ca)
+    self.kca.add_elem(IAHP=dx.channels.IAHP_De1994(size, g_max=0.3 * (u.mS / u.cm ** 2)))
+
+    self.Ih = dx.channels.Ih_HM1992(size, g_max=0.01 * (u.mS / u.cm ** 2), E=-43 * u.mV)
+    self.IL = dx.channels.IL(size, g_max=0.0075 * (u.mS / u.cm ** 2), E=-70 * u.mV)
 
 
-class SingleCompartmentThalamusNeuron(dx.neurons.SingleCompartment):
+class RTC(dx.neurons.SingleCompartment):
+  def __init__(self, size, gKL=0.01 * (u.mS / u.cm ** 2), V_initializer=bst.init.Constant(-65. * u.mV)):
+    super().__init__(size, A=2.9e-4 * u.cm ** 2, V_initializer=V_initializer, V_th=20 * u.mV)
+
+    self.na = dx.ions.SodiumFixed(size)
+    self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-40 * u.mV))
+
+    self.k = dx.ions.PotassiumFixed(size, E=-90. * u.mV)
+    self.k.add_elem(IDR=dx.channels.IKDR_Ba2002(size, V_sh=-40 * u.mV, phi=0.25))
+    self.k.add_elem(IKL=dx.channels.IK_Leak(size, g_max=gKL))
+
+    self.ca = dx.ions.CalciumDetailed(size, C_rest=5e-5 * u.mM, tau=10. * u.ms, d=0.5 * u.um)
+    self.ca.add_elem(ICaL=dx.channels.ICaL_IS2008(size, g_max=0.3 * (u.mS / u.cm ** 2)))
+    self.ca.add_elem(ICaN=dx.channels.ICaN_IS2008(size, g_max=0.6 * (u.mS / u.cm ** 2)))
+    self.ca.add_elem(ICaT=dx.channels.ICaT_HM1992(size, g_max=2.1 * (u.mS / u.cm ** 2)))
+    self.ca.add_elem(ICaHT=dx.channels.ICaHT_HM1992(size, g_max=0.6 * (u.mS / u.cm ** 2)))
+
+    self.kca = dx.MixIons(self.k, self.ca)
+    self.kca.add_elem(IAHP=dx.channels.IAHP_De1994(size, g_max=0.1 * (u.mS / u.cm ** 2)))
+
+    self.Ih = dx.channels.Ih_HM1992(size, g_max=0.01 * (u.mS / u.cm ** 2), E=-43 * u.mV)
+    self.IL = dx.channels.IL(size, g_max=0.0075 * (u.mS / u.cm ** 2), E=-70 * u.mV)
+
+
+class IN(dx.neurons.SingleCompartment):
+  def __init__(self, size, V_initializer=bst.init.Constant(-70. * u.mV)):
+    super().__init__(size, A=1.7e-4 * u.cm ** 2, V_initializer=V_initializer, V_th=20. * u.mV)
+
+    self.na = dx.ions.SodiumFixed(size)
+    self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-30 * u.mV))
+
+    self.k = dx.ions.PotassiumFixed(size, E=-90. * u.mV)
+    self.k.add_elem(IDR=dx.channels.IKDR_Ba2002(size, V_sh=-30 * u.mV, phi=0.25))
+    self.k.add_elem(IKL=dx.channels.IK_Leak(size, g_max=0.01 * (u.mS / u.cm ** 2)))
+
+    self.ca = dx.ions.CalciumDetailed(size, C_rest=5e-5 * u.mM, tau=10. * u.ms, d=0.5 * u.um)
+    self.ca.add_elem(ICaN=dx.channels.ICaN_IS2008(size, g_max=0.1 * (u.mS / u.cm ** 2)))
+    self.ca.add_elem(ICaHT=dx.channels.ICaHT_HM1992(size, g_max=2.5 * (u.mS / u.cm ** 2)))
+
+    self.kca = dx.MixIons(self.k, self.ca)
+    self.kca.add_elem(IAHP=dx.channels.IAHP_De1994(size, g_max=0.2 * (u.mS / u.cm ** 2)))
+
+    self.IL = dx.channels.IL(size, g_max=0.0075 * (u.mS / u.cm ** 2), E=-60 * u.mV)
+    self.Ih = dx.channels.Ih_HM1992(size, g_max=0.05 * (u.mS / u.cm ** 2), E=-43 * u.mV)
+
+
+class TRN(dx.neurons.SingleCompartment):
+  def __init__(self, size, V_initializer=bst.init.Constant(-70. * u.mV), gl=0.0075):
+    super().__init__(size, A=1.43e-4 * u.cm ** 2, V_initializer=V_initializer, V_th=20. * u.mV)
+
+    self.na = dx.ions.SodiumFixed(size)
+    self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-40 * u.mV))
+
+    self.k = dx.ions.PotassiumFixed(size, E=-90. * u.mV)
+    self.k.add_elem(IDR=dx.channels.IKDR_Ba2002(size, V_sh=-40 * u.mV))
+    self.k.add_elem(IKL=dx.channels.IK_Leak(size, g_max=0.01 * (u.mS / u.cm ** 2)))
+
+    self.ca = dx.ions.CalciumDetailed(size, C_rest=5e-5 * u.mM, tau=100. * u.ms, d=0.5 * u.um)
+    self.ca.add_elem(ICaN=dx.channels.ICaN_IS2008(size, g_max=0.2 * (u.mS / u.cm ** 2)))
+    self.ca.add_elem(ICaT=dx.channels.ICaT_HP1992(size, g_max=1.3 * (u.mS / u.cm ** 2)))
+
+    self.kca = dx.MixIons(self.k, self.ca)
+    self.kca.add_elem(IAHP=dx.channels.IAHP_De1994(size, g_max=0.2 * (u.mS / u.cm ** 2)))
+
+    # self.IL = dx.channels.IL(size, g_max=0.01 * (u.mS / u.cm ** 2), E=-60 * u.mV)
+    self.IL = dx.channels.IL(size, g_max=gl * (u.mS / u.cm ** 2), E=-60 * u.mV)
+
   def step_run(self, t, inp):
-    dx.rk4_step(self, t, inp)
+    # dx.rk4_step(neu, t, inp)
+    dx.rk2_step(self, t, inp)
+    # dx.euler_step(neu, t, inp)
     return self.V.value
 
 
-class HTC(SingleCompartmentThalamusNeuron):
-  def __init__(self, size, gKL=0.01 * S, V_initializer=bst.init.Constant(-65. * bu.mV)):
-    super().__init__(size, A=2.9e-4 * bu.cm ** 2, V_initializer=V_initializer, V_th=20. * bu.mV)
-
-    self.na = dx.ions.SodiumFixed(size, E=50. * bu.mV)
-    self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-30 * bu.mV))
-
-    self.k = dx.ions.PotassiumFixed(size, E=-90. * bu.mV)
-    self.k.add_elem(IKL=dx.channels.IK_Leak(size, g_max=gKL))
-    self.k.add_elem(IDR=dx.channels.IKDR_Ba2002(size, V_sh=-30. * bu.mV, phi=0.25))
-
-    self.ca = dx.ions.CalciumDetailed(size, C_rest=5e-5 * bu.mM, tau=10. * bu.ms, d=0.5 * bu.um)
-    self.ca.add_elem(ICaL=dx.channels.ICaL_IS2008(size, g_max=0.5 * S))
-    self.ca.add_elem(ICaN=dx.channels.ICaN_IS2008(size, g_max=0.5 * S))
-    self.ca.add_elem(ICaT=dx.channels.ICaT_HM1992(size, g_max=2.1 * S))
-    self.ca.add_elem(ICaHT=dx.channels.ICaHT_HM1992(size, g_max=3.0 * S))
-
-    self.kca = dx.MixIons(self.k, self.ca)
-    self.kca.add_elem(IAHP=dx.channels.IAHP_De1994(size, g_max=0.3 * S))
-
-    self.Ih = dx.channels.Ih_HM1992(size, g_max=0.01 * S, E=-43 * bu.mV)
-    self.IL = dx.channels.IL(size, g_max=bst.init.Uniform(0.0075 * S, 0.0125 * S), E=-70 * bu.mV)
-
-
-class RTC(SingleCompartmentThalamusNeuron):
-  def __init__(self, size, gKL=0.01 * S, V_initializer=bst.init.Constant(-65. * bu.mV)):
-    super().__init__(size, A=2.9e-4 * bu.cm ** 2, V_initializer=V_initializer, V_th=20 * bu.mV)
-
-    self.na = dx.ions.SodiumFixed(size)
-    self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-40 * bu.mV))
-
-    self.k = dx.ions.PotassiumFixed(size, E=-90. * bu.mV)
-    self.k.add_elem(IDR=dx.channels.IKDR_Ba2002(size, V_sh=-40 * bu.mV, phi=0.25))
-    self.k.add_elem(IKL=dx.channels.IK_Leak(size, g_max=gKL))
-
-    self.ca = dx.ions.CalciumDetailed(size, C_rest=5e-5 * bu.mM, tau=10. * bu.ms, d=0.5 * bu.um)
-    self.ca.add_elem(ICaL=dx.channels.ICaL_IS2008(size, g_max=0.3 * S))
-    self.ca.add_elem(ICaN=dx.channels.ICaN_IS2008(size, g_max=0.6 * S))
-    self.ca.add_elem(ICaT=dx.channels.ICaT_HM1992(size, g_max=2.1 * S))
-    self.ca.add_elem(ICaHT=dx.channels.ICaHT_HM1992(size, g_max=0.6 * S))
-
-    self.kca = dx.MixIons(self.k, self.ca)
-    self.kca.add_elem(IAHP=dx.channels.IAHP_De1994(size, g_max=0.1 * S))
-
-    self.Ih = dx.channels.Ih_HM1992(size, g_max=0.01 * S, E=-43 * bu.mV)
-    self.IL = dx.channels.IL(size, g_max=bst.init.Uniform(0.0075 * S, 0.0125 * S), E=-70 * bu.mV)
-
-
-class IN(SingleCompartmentThalamusNeuron):
-  def __init__(self, size, V_initializer=bst.init.Constant(-70. * bu.mV)):
-    super(IN, self).__init__(size, A=1.7e-4 * bu.cm ** 2, V_initializer=V_initializer, V_th=20. * bu.mV)
-
-    self.na = dx.ions.SodiumFixed(size)
-    self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-30 * bu.mV))
-
-    self.k = dx.ions.PotassiumFixed(size, E=-90. * bu.mV)
-    self.k.add_elem(IDR=dx.channels.IKDR_Ba2002(size, V_sh=-30 * bu.mV, phi=0.25))
-    self.k.add_elem(IKL=dx.channels.IK_Leak(size, g_max=0.01 * S))
-
-    self.ca = dx.ions.CalciumDetailed(size, C_rest=5e-5 * bu.mM, tau=10. * bu.ms, d=0.5 * bu.um)
-    self.ca.add_elem(ICaN=dx.channels.ICaN_IS2008(size, g_max=0.1 * S))
-    self.ca.add_elem(ICaHT=dx.channels.ICaHT_HM1992(size, g_max=2.5 * S))
-
-    self.kca = dx.MixIons(self.k, self.ca)
-    self.kca.add_elem(IAHP=dx.channels.IAHP_De1994(size, g_max=0.2 * S))
-
-    self.IL = dx.channels.IL(size, g_max=bst.init.Uniform(0.0075 * S, 0.0125 * S), E=-60 * bu.mV)
-    self.Ih = dx.channels.Ih_HM1992(size, g_max=0.05 * S, E=-43 * bu.mV)
-
-
-class TRN(SingleCompartmentThalamusNeuron):
-  def __init__(self, size, V_initializer=bst.init.Constant(-70. * bu.mV)):
-    super(TRN, self).__init__(size, A=1.43e-4 * bu.cm ** 2, V_initializer=V_initializer, V_th=20. * bu.mV)
-
-    self.na = dx.ions.SodiumFixed(size)
-    self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-40 * bu.mV))
-
-    self.k = dx.ions.PotassiumFixed(size, E=-90. * bu.mV)
-    self.k.add_elem(IDR=dx.channels.IKDR_Ba2002(size, V_sh=-40 * bu.mV))
-    self.k.add_elem(IKL=dx.channels.IK_Leak(size, g_max=0.01 * S))
-
-    self.ca = dx.ions.CalciumDetailed(size, C_rest=5e-5 * bu.mM, tau=100. * bu.ms, d=0.5 * bu.um)
-    self.ca.add_elem(ICaN=dx.channels.ICaN_IS2008(size, g_max=0.2 * S))
-    self.ca.add_elem(ICaT=dx.channels.ICaT_HP1992(size, g_max=1.3 * S))
-
-    self.kca = dx.MixIons(self.k, self.ca)
-    self.kca.add_elem(IAHP=dx.channels.IAHP_De1994(size, g_max=0.2 * S))
-
-    self.IL = dx.channels.IL(size, g_max=bst.init.Uniform(0.0075 * S, 0.0125 * S), E=-60 * bu.mV)
-
-
 def try_trn_neuron():
-  bst.environ.set(dt=0.01 * bu.ms)
+  bst.environ.set(dt=0.01 * u.ms)
 
-  # trn = RTC([1, 1])  # [n_neuron, n_compartment]
-  # trn = RTC(1)  # [n_neuron, n_compartment]
-  trn = TRN([1, 1])  # [n_neuron, n_compartment]
-  trn.init_state()
+  I = bts.input.section_input(values=[0, -0.05, 0], durations=[500, 200, 1000], dt=0.01) * u.uA
+  times = u.math.arange(I.shape[0]) * bst.environ.get_dt()
 
-  I = bts.input.section_input(values=[0, -0.1, 0], durations=[100, 100, 500], dt=0.01) * bu.nA
-  times = bu.math.arange(I.shape[0]) * bst.environ.get_dt()
+  # neu = HTC([1, 1])  # [n_neuron, n_compartment]
+  # neu = IN([1, 1])  # [n_neuron, n_compartment]
+  # neu = RTC(1)  # [n_neuron, n_compartment]
+  neu = TRN([1, 1], gl=0.0075)  # [n_neuron, n_compartment]
+  neu.init_state()
 
-  vs = bst.transform.for_loop(trn.step_run, times, I)
+  t0 = time.time()
+  vs = bst.transform.for_loop(neu.step_run, times, I)
+  t1 = time.time()
+  print(f"Elapsed time: {t1 - t0:.4f} s")
 
-  plt.plot(times.to_decimal(bu.ms), bu.math.squeeze(vs.to_decimal(bu.mV)))
+  neu = TRN([1, 1], gl=0.00751)  # [n_neuron, n_compartment]
+  neu.init_state()
+  vs2 = bst.transform.for_loop(neu.step_run, times, I)
+
+  plt.plot(times.to_decimal(u.ms), u.math.squeeze(vs.to_decimal(u.mV)))
+  plt.plot(times.to_decimal(u.ms), u.math.squeeze(vs2.to_decimal(u.mV)))
+  plt.show()
+
+
+def try_trn_neuron2():
+  bst.environ.set(dt=0.01 * u.ms)
+
+  I = bts.input.section_input(values=[0, -0.05, 0], durations=[500, 200, 1000], dt=0.01) * u.uA
+  all_times = u.math.arange(I.shape[0]) * bst.environ.get_dt()
+
+  neu = TRN([1, 1], gl=0.0075)  # [n_neuron, n_compartment]
+
+  @bst.transform.jit
+  def run():
+    neu.init_state()
+    vs = bst.transform.for_loop(neu.step_run, all_times, I)
+    return vs
+
+  times = []
+  t0 = time.time()
+  vs = run()
+  t1 = time.time()
+  print(f"Compilation time: {t1 - t0:.4f} s")
+  times.append(t1 - t0)
+
+  for _ in range(5):
+    t0 = time.time()
+    vs = run()
+    t1 = time.time()
+    print(f"Running Time: {t1 - t0}")
+    times.append(t1 - t0)
+
+  print(times)
+
+  plt.plot(all_times.to_decimal(u.ms), u.math.squeeze(vs.to_decimal(u.mV)))
   plt.show()
 
 
 if __name__ == '__main__':
-  try_trn_neuron()
+  try_trn_neuron2()
