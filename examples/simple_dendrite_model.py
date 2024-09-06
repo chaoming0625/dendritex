@@ -93,3 +93,4 @@ class ThreeCompartmentHH(dx.neurons.MultiCompartment):
   def step_run(self, t, inp):
     dx.rk4_step(self, t, inp)
     return self.V.value, self.spike.value
+
