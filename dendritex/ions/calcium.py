@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import Union, Callable, Optional
 
 import brainstate as bst
-import brainunit as bu
+import brainunit as u
 
 from .._base import Ion, Channel, HHTypedNeuron, State4Integral
 
@@ -50,8 +50,8 @@ class CalciumFixed(Calcium):
   def __init__(
       self,
       size: bst.typing.Size,
-      E: Union[bst.typing.ArrayLike, Callable] = 120. * bu.mV,
-      C: Union[bst.typing.ArrayLike, Callable] = 2.4e-4 * bu.mM,
+      E: Union[bst.typing.ArrayLike, Callable] = 120. * u.mV,
+      C: Union[bst.typing.ArrayLike, Callable] = 2.4e-4 * u.mM,
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
       **channels
@@ -93,9 +93,9 @@ class _CalciumDynamics(Calcium):
   def __init__(
       self,
       size: bst.typing.Size,
-      C0: Union[bst.typing.ArrayLike, Callable] = 2. * bu.mM,
-      T: Union[bst.typing.ArrayLike, Callable] = 36.,
-      C_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Constant(2.4e-4 * bu.mM),
+      C0: Union[bst.typing.ArrayLike, Callable] = 2. * u.mM,
+      T: Union[bst.typing.ArrayLike, Callable] = u.celsius2kelvin(36.),
+      C_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Constant(2.4e-4 * u.mM),
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
       **channels
@@ -110,7 +110,7 @@ class _CalciumDynamics(Calcium):
     # parameters
     self.C0 = bst.init.param(C0, self.varshape, allow_none=False)
     self.T = bst.init.param(T, self.varshape, allow_none=False)  # temperature
-    self._constant = bu.gas_constant / (2 * bu.faraday_constant) * (273.15 + self.T) * bu.kelvin
+    self._constant = u.gas_constant * self.T / (2 * u.faraday_constant)
     self._C_initializer = C_initializer
 
   def derivative(self, C, t, V):
@@ -119,12 +119,10 @@ class _CalciumDynamics(Calcium):
   def init_state(self, V, batch_size=None):
     # Calcium concentration
     self.C = State4Integral(bst.init.param(self._C_initializer, self.varshape, batch_size))
-    # self.E = bst.ShortTermState(self._reversal_potential(self.C.value))
     super().init_state(V, batch_size)
 
   def reset_state(self, V, batch_size=None):
     self.C.value = bst.init.param(self._C_initializer, self.varshape, batch_size)
-    # self.E.value = self._reversal_potential(self.C.value)
     super().reset_state(V, batch_size)
 
   def compute_derivative(self, V):
@@ -139,11 +137,11 @@ class _CalciumDynamics(Calcium):
   def E(self):
     return self._reversal_potential(self.C.value)
 
-  # def after_integral(self, V):
-  #   self.E.value = self._reversal_potential(self.C.value)
-
   def _reversal_potential(self, C):
-    return self._constant * bu.math.log(self.C0 / C)
+    # The Nernst relation:
+    #
+    # E_{\mathrm{Ca}}=\frac{RT}{2F}\log\frac{[\mathrm{Ca}]_{\mathrm{o}}}{[\mathrm{Ca}]_{\mathrm{i}}}
+    return self._constant * u.math.log(self.C0 / C)
 
 
 class CalciumDetailed(_CalciumDynamics):
@@ -161,12 +159,11 @@ class CalciumDetailed(_CalciumDynamics):
 
   .. math::
 
-      [Ca]_{i}=-\frac{k}{2 F d} I_{Ca}
+      [Ca]_{i}=-\frac{I_{Ca}}{2 F d}
 
   where :math:`F=96489\, \mathrm{C\, mol^{-1}}` is the Faraday constant,
   :math:`d=1\, \mathrm{\mu m}` is the depth of the shell beneath the membrane,
-  the unit conversion constant is :math:`k=0.1` for :math:`I_T` in
-  :math:`\mathrm{\mu A/cm^{2}}` and :math:`[Ca]_{i}` in millimolar,
+  :math:`I_T` in :math:`\mathrm{\mu A/cm^{2}}` and :math:`[Ca]_{i}` in millimolar,
   and :math:`I_{Ca}` is the summation of all :math:`Ca^{2+}` currents.
 
   *(ii) Efflux of* :math:`Ca^{2+}` *due to an active pump*
@@ -261,12 +258,12 @@ class CalciumDetailed(_CalciumDynamics):
   def __init__(
       self,
       size: bst.typing.Size,
-      T: Union[bst.typing.ArrayLike, Callable] = 36.,
-      d: Union[bst.typing.ArrayLike, Callable] = 1. * bu.um,
-      C_rest: Union[bst.typing.ArrayLike, Callable] = 2.4e-4 * bu.mM,
-      tau: Union[bst.typing.ArrayLike, Callable] = 5. * bu.ms,
-      C0: Union[bst.typing.ArrayLike, Callable] = 2. * bu.mM,
-      C_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Constant(2.4e-4 * bu.mM),
+      T: Union[bst.typing.ArrayLike, Callable] = u.celsius2kelvin(36.),
+      d: Union[bst.typing.ArrayLike, Callable] = 1. * u.um,
+      tau: Union[bst.typing.ArrayLike, Callable] = 5. * u.ms,
+      C_rest: Union[bst.typing.ArrayLike, Callable] = 2.4e-4 * u.mM,
+      C0: Union[bst.typing.ArrayLike, Callable] = 2. * u.mM,
+      C_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Constant(2.4e-4 * u.mM),
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
       **channels
@@ -288,13 +285,14 @@ class CalciumDetailed(_CalciumDynamics):
 
   def derivative(self, C, t, V):
     ICa = self.current(V, include_external=True)
-    drive = - ICa / (2 * bu.faraday_constant * self.d)
-    drive = bu.math.maximum(drive, bu.math.zeros_like(drive))
+    drive = ICa / (2 * u.faraday_constant * self.d)
+    drive = u.math.maximum(drive, u.math.zeros_like(drive))
     return drive + (self.C_rest - C) / self.tau
 
 
 class CalciumFirstOrder(_CalciumDynamics):
-  r"""The first-order calcium concentration model.
+  r"""
+  The first-order calcium concentration model.
 
   .. math::
 
@@ -306,11 +304,11 @@ class CalciumFirstOrder(_CalciumDynamics):
   def __init__(
       self,
       size: bst.typing.Size,
-      T: Union[bst.typing.ArrayLike, Callable] = 36.,
+      T: Union[bst.typing.ArrayLike, Callable] = u.celsius2kelvin(36.),
       alpha: Union[bst.typing.ArrayLike, Callable] = 0.13,
       beta: Union[bst.typing.ArrayLike, Callable] = 0.075,
-      C0: Union[bst.typing.ArrayLike, Callable] = 2. * bu.mM,
-      C_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Constant(2.4e-4 * bu.mM),
+      C0: Union[bst.typing.ArrayLike, Callable] = 2. * u.mM,
+      C_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Constant(2.4e-4 * u.mM),
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
       **channels
@@ -331,5 +329,5 @@ class CalciumFirstOrder(_CalciumDynamics):
 
   def derivative(self, C, t, V):
     ICa = self.current(V, include_external=True)
-    drive = bu.math.maximum(- self.alpha * ICa, 0. * bu.mM)
+    drive = u.math.maximum(self.alpha * ICa, 0. * u.mM)
     return drive - self.beta * C

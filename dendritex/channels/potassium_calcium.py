@@ -11,6 +11,7 @@ from typing import Union, Callable, Optional
 
 import brainstate as bst
 import brainunit as bu
+import jax
 
 from .._base import IonInfo, Channel, State4Integral
 from ..ions import Calcium, Potassium
@@ -127,7 +128,7 @@ class IAHP_De1994(KCaChannel):
     self.p.derivative = self.phi * (C2 / C3 - self.p.value) * C3 / bu.ms
 
   def current(self, V, K: IonInfo, Ca: IonInfo):
-    return self.g_max * self.p.value * self.p.value * (Ca.E - V)
+    return self.g_max * self.p.value * self.p.value * (K.E - V)
 
   def init_state(self, V, K: IonInfo, Ca: IonInfo, batch_size=None):
     self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
@@ -152,7 +153,7 @@ class IKca3_1_Ma2020(KCaChannel):
   '''
   __module__ = 'dendritex.channels'
 
-  root_type = bst.mixin.JointTypes[Potassium ,Calcium]
+  root_type = bst.mixin.JointTypes[Potassium, Calcium]
 
   def __init__(
       self,
@@ -175,39 +176,40 @@ class IKca3_1_Ma2020(KCaChannel):
     self.phi = bst.init.param(T_base ** ((T - 37) / 10), self.varshape, allow_none=False)
     self.g_max = bst.init.param(g_max, self.varshape, allow_none=False)
 
-    self.p_beta =0.05
+    self.p_beta = 0.05
 
   def current(self, V, K: IonInfo, Ca: IonInfo):
     return self.g_max * self.p.value * (K.E - V)
-  
-  def p_tau(self,V, Ca):
-    return 1/(self.p_alpha(V,Ca) + self.p_beta)
-  
-  def p_inf(self, V , Ca):
-    return self.p_alpha(V,Ca)/(self.p_alpha(V,Ca) + self.p_beta)
-  
-  def p_alpha(self, V ,Ca):
+
+  def p_tau(self, V, Ca):
+    return 1 / (self.p_alpha(V, Ca) + self.p_beta)
+
+  def p_inf(self, V, Ca):
+    return self.p_alpha(V, Ca) / (self.p_alpha(V, Ca) + self.p_beta)
+
+  def p_alpha(self, V, Ca):
     V = V / bu.mV
     return self.p_vdep(V) * self.p_concdep(Ca)
-  
-  def p_vdep(self, V ):
-    return bu.math.exp((V+70.)/27.)
-  
+
+  def p_vdep(self, V):
+    return bu.math.exp((V + 70.) / 27.)
+
   def p_concdep(self, Ca):
-    concdep_1 = 500 * (0.015-Ca.C/ bu.mM)/( bu.math.exp((0.015-Ca.C/bu.mM)/0.0013) -1 )
-    concdep_2 = 500 * 0.005/( bu.math.exp(0.005/0.0013) -1 )
-    return bu.math.where(Ca.C/bu.mM<0.01,concdep_1,concdep_2)
-  
+    # concdep_1 = 500 * (0.015 - Ca.C / bu.mM) / (bu.math.exp((0.015 - Ca.C / bu.mM) / 0.0013) - 1)
+    concdep_1 = 500 * 0.0013 / bu.math.exprel((0.015 - Ca.C / bu.mM) / 0.0013)
+    with jax.ensure_compile_time_eval():
+      concdep_2 = 500 * 0.005 / (bu.math.exp(0.005 / 0.0013) - 1)
+    return bu.math.where(Ca.C / bu.mM < 0.01, concdep_1, concdep_2)
+
   def init_state(self, V, K: IonInfo, Ca: IonInfo, batch_size=None):
     self.p = State4Integral(bst.init.param(bu.math.zeros, self.varshape, batch_size))
-    self.reset_state(V,K,Ca)
+    self.reset_state(V, K, Ca)
 
   def reset_state(self, V, K: IonInfo, Ca: IonInfo, batch_size=None):
-    self.p.value = self.p_inf(V,Ca)
+    self.p.value = self.p_inf(V, Ca)
 
   def compute_derivative(self, V, K: IonInfo, Ca: IonInfo):
-    self.p.derivative = self.phi * (self.p_inf(V,Ca) - self.p.value) / self.p_tau(V,Ca) / bu.ms
-
+    self.p.derivative = self.phi * (self.p_inf(V, Ca) - self.p.value) / self.p_tau(V, Ca) / bu.ms
 
 
 class IKca2_2_Ma2020(KCaChannel):
@@ -229,14 +231,14 @@ class IKca2_2_Ma2020(KCaChannel):
   '''
   __module__ = 'dendritex.channels'
 
-  root_type = bst.mixin.JointTypes[Potassium ,Calcium]
+  root_type = bst.mixin.JointTypes[Potassium, Calcium]
 
   def __init__(
       self,
       size: bst.typing.Size,
       g_max: Union[bst.typing.ArrayLike, Callable] = 38. * (bu.mS / bu.cm ** 2),
       T_base: bst.typing.ArrayLike = 3.,
-      diff: bst.typing.ArrayLike = 3.,   
+      diff: bst.typing.ArrayLike = 3.,
       T: bst.typing.ArrayLike = 22,
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
@@ -256,16 +258,16 @@ class IKca2_2_Ma2020(KCaChannel):
 
     self.invc1 = 80e-3  # (/ms)
     self.invc2 = 80e-3  # (/ms)
-    self.invc3 = 200e-3 # (/ms)
+    self.invc3 = 200e-3  # (/ms)
 
-    self.invo1 = 1      # (/ms)
-    self.invo2 = 100e-3 # (/ms)
-    self.diro1 = 160e-3 # (/ms)
-    self.diro2 = 1.2    # (/ms)
+    self.invo1 = 1  # (/ms)
+    self.invo2 = 100e-3  # (/ms)
+    self.diro1 = 160e-3  # (/ms)
+    self.diro2 = 1.2  # (/ms)
 
-    self.dirc2 = 200    # (/ms-mM)
-    self.dirc3 = 160    # (/ms-mM)
-    self.dirc4 = 80     # (/ms-mM)
+    self.dirc2 = 200  # (/ms-mM)
+    self.dirc3 = 160  # (/ms-mM)
+    self.dirc4 = 80  # (/ms-mM)
 
   def init_state(self, V, K: IonInfo, Ca: IonInfo, batch_size=None):
 
@@ -273,33 +275,36 @@ class IKca2_2_Ma2020(KCaChannel):
     self.C2 = State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
     self.C3 = State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
     self.C4 = State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
-    self.O1 =  State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
-    self.O2 =  State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
+    self.O1 = State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
+    self.O2 = State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size))
     self.normalize_states([self.C1, self.C2, self.C3, self.C4, self.O1, self.O2])
-   
+
   def reset_state(self, V, K: IonInfo, Ca: IonInfo, batch_size=None):
     self.normalize_states([self.C1, self.C2, self.C3, self.C4, self.O1, self.O2])
 
   def current(self, V, K: IonInfo, Ca: IonInfo):
     return self.g_max * (self.O1.value + self.O2.value) * (K.E - V)
-  
+
   def before_integral(self, V, K: IonInfo, Ca: IonInfo):
     self.normalize_states([self.C1, self.C2, self.C3, self.C4, self.O1, self.O2])
 
   def normalize_states(self, states):
     total = 0.
     for state in states:
-        state.value = bu.math.maximum(state.value, 0)
-        total = total + state.value
+      state.value = bu.math.maximum(state.value, 0)
+      total = total + state.value
     for state in states:
-        state.value = state.value/total
+      state.value = state.value / total
 
   def compute_derivative(self, V, K: IonInfo, Ca: IonInfo):
 
     self.C1.derivative = (self.C2.value * self.invc1_t(Ca) - self.C1.value * self.dirc2_t_ca(Ca)) / bu.ms
-    self.C2.derivative = (self.C3.value * self.invc2_t(Ca) + self.C1.value * self.dirc2_t_ca(Ca) - self.C2.value * (self.invc1_t(Ca) + self.dirc3_t_ca(Ca))) / bu.ms
-    self.C3.derivative = (self.C4.value * self.invc3_t(Ca) + self.O1.value * self.invo1_t(Ca) - self.C3.value * (self.dirc4_t_ca(Ca) + self.diro1_t(Ca))) / bu.ms
-    self.C4.derivative = (self.C3.value * self.dirc4_t_ca(Ca) + self.O2.value * self.invo2_t(Ca) - self.C4.value * (self.invc3_t(Ca) + self.diro2_t(Ca))) / bu.ms
+    self.C2.derivative = (self.C3.value * self.invc2_t(Ca) + self.C1.value * self.dirc2_t_ca(Ca) - self.C2.value * (
+          self.invc1_t(Ca) + self.dirc3_t_ca(Ca))) / bu.ms
+    self.C3.derivative = (self.C4.value * self.invc3_t(Ca) + self.O1.value * self.invo1_t(Ca) - self.C3.value * (
+          self.dirc4_t_ca(Ca) + self.diro1_t(Ca))) / bu.ms
+    self.C4.derivative = (self.C3.value * self.dirc4_t_ca(Ca) + self.O2.value * self.invo2_t(Ca) - self.C4.value * (
+          self.invc3_t(Ca) + self.diro2_t(Ca))) / bu.ms
     self.O1.derivative = (self.C3.value * self.diro1_t(Ca) - self.O1.value * self.invo1_t(Ca)) / bu.ms
     self.O2.derivative = (self.C4.value * self.diro2_t(Ca) - self.O2.value * self.invo2_t(Ca)) / bu.ms
 
@@ -307,13 +312,13 @@ class IKca2_2_Ma2020(KCaChannel):
   dirc3_t_ca = lambda self, Ca: self.dirc3_t * (Ca.C / bu.mM) / self.diff
   dirc4_t_ca = lambda self, Ca: self.dirc4_t * (Ca.C / bu.mM) / self.diff
 
-  invc1_t = lambda self, Ca: self.invc1 * self.phi  
+  invc1_t = lambda self, Ca: self.invc1 * self.phi
   invc2_t = lambda self, Ca: self.invc2 * self.phi
-  invc3_t = lambda self, Ca: self.invc3 * self.phi 
-  invo1_t = lambda self, Ca: self.invo1 * self.phi 
-  invo2_t = lambda self, Ca: self.invo2 * self.phi 
-  diro1_t = lambda self, Ca: self.diro1 * self.phi 
-  diro2_t = lambda self, Ca: self.diro2 * self.phi 
+  invc3_t = lambda self, Ca: self.invc3 * self.phi
+  invo1_t = lambda self, Ca: self.invo1 * self.phi
+  invo2_t = lambda self, Ca: self.invo2 * self.phi
+  diro1_t = lambda self, Ca: self.diro1 * self.phi
+  diro2_t = lambda self, Ca: self.diro2 * self.phi
   dirc2_t = lambda self, Ca: self.dirc2 * self.phi
   dirc3_t = lambda self, Ca: self.dirc3 * self.phi
   dirc4_t = lambda self, Ca: self.dirc4 * self.phi
@@ -339,7 +344,7 @@ class IKca1_1_Ma2020(KCaChannel):
   '''
   __module__ = 'dendritex.channels'
 
-  root_type = bst.mixin.JointTypes[Potassium ,Calcium]
+  root_type = bst.mixin.JointTypes[Potassium, Calcium]
 
   def __init__(
       self,
@@ -361,33 +366,34 @@ class IKca1_1_Ma2020(KCaChannel):
     self.T = bst.init.param(T, self.varshape, allow_none=False)
     self.T_base = bst.init.param(T_base, self.varshape, allow_none=False)
     self.phi = bst.init.param(T_base ** ((T - 23) / 10), self.varshape, allow_none=False)
-    
+
     self.Qo = 0.73
     self.Qc = -0.67
     self.k1 = 1.0e3
     self.onoffrate = 1.
     self.L0 = 1806
     self.Kc = 11.0e-3
-    self.Ko = 1.1e-3 
+    self.Ko = 1.1e-3
 
     self.pf0 = 2.39e-3
     self.pf1 = 7.0e-3
-    self.pf2 = 40e-3 
-    self.pf3 = 295e-3 
+    self.pf2 = 40e-3
+    self.pf3 = 295e-3
     self.pf4 = 557e-3
 
     self.pb0 = 3936e-3
-    self.pb1 = 1152e-3 
-    self.pb2 = 659e-3 
-    self.pb3 = 486e-3  
-    self.pb4 = 92e-3 
+    self.pb1 = 1152e-3
+    self.pb2 = 659e-3
+    self.pb3 = 486e-3
+    self.pb4 = 92e-3
+
   def init_state(self, V, K: IonInfo, Ca: IonInfo, batch_size=None):
 
     for i in range(5):
-        setattr(self, f'C{i}', State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size)))
+      setattr(self, f'C{i}', State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size)))
 
     for i in range(5):
-        setattr(self, f'O{i}', State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size)))
+      setattr(self, f'O{i}', State4Integral(bst.init.param(bu.math.ones, self.varshape, batch_size)))
 
     self.normalize_states([getattr(self, f'C{i}') for i in range(5)] + [getattr(self, f'O{i}') for i in range(5)])
 
@@ -396,46 +402,50 @@ class IKca1_1_Ma2020(KCaChannel):
 
   def current(self, V, K: IonInfo, Ca: IonInfo):
     return self.g_max * (self.O1.value + self.O2.value) * (K.E - V)
-  
+
   def before_integral(self, V, K: IonInfo, Ca: IonInfo):
     self.normalize_states([getattr(self, f'C{i}') for i in range(5)] + [getattr(self, f'O{i}') for i in range(5)])
 
   def normalize_states(self, states):
     total = 0.
     for state in states:
-        state.value = bu.math.maximum(state.value, 0)
-        total = total + state.value
+      state.value = bu.math.maximum(state.value, 0)
+      total = total + state.value
     for state in states:
-        state.value = state.value/total
-
+      state.value = state.value / total
 
   def compute_derivative(self, V, K: IonInfo, Ca: IonInfo):
-    
+
     self.C0.derivative = (self.C1 * self.c10(Ca) + self.O0 * self.b0(V) - self.C0 * (self.c01(Ca) + self.f0(V))) / bu.ms
-    self.C1.derivative = (self.C0 * self.c01(Ca) + self.C2 * self.c21(Ca) + self.O1 * self.b1(V) - self.C1 * (self.c10(Ca) + self.c12(Ca) + self.f1(V))) / bu.ms
-    self.C2.derivative = (self.C1 * self.c12(Ca) + self.C3 * self.c32(Ca) + self.O2 * self.b2(V) - self.C2 * (self.c21(Ca) + self.c23(Ca) + self.f2(V))) / bu.ms
-    self.C3.derivative = (self.C2 * self.c23(Ca) + self.C4 * self.c43(Ca) + self.O3 * self.b3(V) - self.C3 * (self.c32(Ca) + self.c34(Ca) + self.f3(V))) / bu.ms
+    self.C1.derivative = (self.C0 * self.c01(Ca) + self.C2 * self.c21(Ca) + self.O1 * self.b1(V) - self.C1 * (
+          self.c10(Ca) + self.c12(Ca) + self.f1(V))) / bu.ms
+    self.C2.derivative = (self.C1 * self.c12(Ca) + self.C3 * self.c32(Ca) + self.O2 * self.b2(V) - self.C2 * (
+          self.c21(Ca) + self.c23(Ca) + self.f2(V))) / bu.ms
+    self.C3.derivative = (self.C2 * self.c23(Ca) + self.C4 * self.c43(Ca) + self.O3 * self.b3(V) - self.C3 * (
+          self.c32(Ca) + self.c34(Ca) + self.f3(V))) / bu.ms
     self.C4.derivative = (self.C3 * self.c34(Ca) + self.O4 * self.b4(V) - self.C4 * (self.c43(Ca) + self.f4(V))) / bu.ms
 
     self.O0.derivative = (self.O1 * self.o10(Ca) + self.C0 * self.f0(V) - self.O0 * (self.o01(Ca) + self.b0(V))) / bu.ms
-    self.O1.derivative = (self.O0 * self.o01(Ca) + self.O2 * self.o21(Ca) + self.C1 * self.f1(V) - self.O1 * (self.o10(Ca) + self.o12(Ca) + self.b1(V))) / bu.ms
-    self.O2.derivative = (self.O1 * self.o12(Ca) + self.O3 * self.o32(Ca) + self.C2 * self.f2(V) - self.O2 * (self.o21(Ca) + self.o23(Ca) + self.b2(V))) / bu.ms
-    self.O3.derivative = (self.O2 * self.o23(Ca) + self.O4 * self.o43(Ca) + self.C3 * self.f3(V) - self.O3 * (self.o32(Ca) + self.o34(Ca) + self.b3(V))) / bu.ms
+    self.O1.derivative = (self.O0 * self.o01(Ca) + self.O2 * self.o21(Ca) + self.C1 * self.f1(V) - self.O1 * (
+          self.o10(Ca) + self.o12(Ca) + self.b1(V))) / bu.ms
+    self.O2.derivative = (self.O1 * self.o12(Ca) + self.O3 * self.o32(Ca) + self.C2 * self.f2(V) - self.O2 * (
+          self.o21(Ca) + self.o23(Ca) + self.b2(V))) / bu.ms
+    self.O3.derivative = (self.O2 * self.o23(Ca) + self.O4 * self.o43(Ca) + self.C3 * self.f3(V) - self.O3 * (
+          self.o32(Ca) + self.o34(Ca) + self.b3(V))) / bu.ms
     self.O4.derivative = (self.O3 * self.o34(Ca) + self.C4 * self.f4(V) - self.O4 * (self.o43(Ca) + self.b4(V))) / bu.ms
 
-
   def current(self, V, K: IonInfo, Ca: IonInfo):
-    return self.g_max * (self.O0.value + self.O1.value + self.O2.value + self.O3.value + self.O4.value) * ( K.E - V) 
+    return self.g_max * (self.O0.value + self.O1.value + self.O2.value + self.O3.value + self.O4.value) * (K.E - V)
 
-  c01 = lambda self, Ca: 4 * (Ca.C/ bu.mM) * self.k1 * self.onoffrate * self.phi
-  c12 = lambda self, Ca: 3 * (Ca.C/ bu.mM) * self.k1 * self.onoffrate * self.phi
-  c23 = lambda self, Ca: 2 * (Ca.C/ bu.mM) * self.k1 * self.onoffrate * self.phi
-  c34 = lambda self, Ca: 1 * (Ca.C/ bu.mM) * self.k1 * self.onoffrate * self.phi
+  c01 = lambda self, Ca: 4 * (Ca.C / bu.mM) * self.k1 * self.onoffrate * self.phi
+  c12 = lambda self, Ca: 3 * (Ca.C / bu.mM) * self.k1 * self.onoffrate * self.phi
+  c23 = lambda self, Ca: 2 * (Ca.C / bu.mM) * self.k1 * self.onoffrate * self.phi
+  c34 = lambda self, Ca: 1 * (Ca.C / bu.mM) * self.k1 * self.onoffrate * self.phi
 
-  o01 = lambda self, Ca: 4 * (Ca.C/ bu.mM) * self.k1 * self.onoffrate * self.phi
-  o12 = lambda self, Ca: 3 * (Ca.C/ bu.mM) * self.k1 * self.onoffrate * self.phi
-  o23 = lambda self, Ca: 2 * (Ca.C/ bu.mM) * self.k1 * self.onoffrate * self.phi
-  o34 = lambda self, Ca: 1 * (Ca.C/ bu.mM) * self.k1 * self.onoffrate * self.phi
+  o01 = lambda self, Ca: 4 * (Ca.C / bu.mM) * self.k1 * self.onoffrate * self.phi
+  o12 = lambda self, Ca: 3 * (Ca.C / bu.mM) * self.k1 * self.onoffrate * self.phi
+  o23 = lambda self, Ca: 2 * (Ca.C / bu.mM) * self.k1 * self.onoffrate * self.phi
+  o34 = lambda self, Ca: 1 * (Ca.C / bu.mM) * self.k1 * self.onoffrate * self.phi
 
   c10 = lambda self, Ca: 1 * self.Kc * self.k1 * self.onoffrate * self.phi
   c21 = lambda self, Ca: 2 * self.Kc * self.k1 * self.onoffrate * self.phi
@@ -447,8 +457,10 @@ class IKca1_1_Ma2020(KCaChannel):
   o32 = lambda self, Ca: 3 * self.Ko * self.k1 * self.onoffrate * self.phi
   o43 = lambda self, Ca: 4 * self.Ko * self.k1 * self.onoffrate * self.phi
 
-  alpha = lambda self, V : bu.math.exp((self.Qo * bu.faraday_constant * V) / (bu.gas_constant * (273.15 + self.T) * bu.kelvin))
-  beta  = lambda self, V : bu.math.exp((self.Qc * bu.faraday_constant * V) / (bu.gas_constant * (273.15 + self.T) * bu.kelvin))
+  alpha = lambda self, V: bu.math.exp(
+    (self.Qo * bu.faraday_constant * V) / (bu.gas_constant * (273.15 + self.T) * bu.kelvin))
+  beta = lambda self, V: bu.math.exp(
+    (self.Qc * bu.faraday_constant * V) / (bu.gas_constant * (273.15 + self.T) * bu.kelvin))
 
   f0 = lambda self, V: self.pf0 * self.alpha(V) * self.phi
   f1 = lambda self, V: self.pf1 * self.alpha(V) * self.phi
