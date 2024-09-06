@@ -98,15 +98,16 @@ def fitting_example():
     losses = bts.metric.squared_error(simulated_vs.mantissa[..., ::step, 0], target_vs.mantissa[..., ::step, 0])
     return losses.mean()
 
-  # calculate the average loss for all parameters,
-  # this is the loss function to be gradient-based optimizations
-  def loss_fun(step=10):
-    return jax.vmap(functools.partial(loss_per_param, step=step))(param_to_optimize.value).mean()
+  # calculate the gradients and loss for each parameter
+  @jax.vmap
+  @jax.jit
+  def compute_grad(param):
+    grads, loss = bst.transform.grad(loss_per_param, argnums=0, return_value=True)(param)
+    return grads, loss
 
   # find the best loss and parameter in the batch
   @bst.transform.jit
-  def best_loss_and_param(params):
-    losses = jax.vmap(loss_per_param)(params)
+  def best_loss_and_param(params, losses):
     i_best = u.math.argmin(losses)
     return losses[i_best], params[i_best]
 
@@ -117,19 +118,18 @@ def fitting_example():
   # Step 6: training
   @bst.transform.jit
   def train_step_per_epoch():
-    grads, loss = bst.transform.grad(loss_fun, grad_vars={'param': param_to_optimize}, return_value=True)()
-    optimizer.update(grads)
-    return loss
+    grads, losses = compute_grad(param_to_optimize.value)
+    optimizer.update({'param': grads})
+    return losses
 
   for i_epoch in range(1000):
-    loss = train_step_per_epoch()
-    best_loss, best_param = best_loss_and_param(param_to_optimize.value)
+    losses = train_step_per_epoch()
+    best_loss, best_param = best_loss_and_param(param_to_optimize.value, losses)
     if best_loss < 1e-5:
-      best_param = best_loss_and_param(param_to_optimize.value)[1]
-      print(f'Epoch {i_epoch}, loss={loss}, best loss={best_loss}, best param={best_param}')
+      print(f'Epoch {i_epoch}, loss={losses.mean()}, best loss={best_loss}, best param={best_param}')
       break
     if i_epoch % 10 == 0:
-      print(f'Epoch {i_epoch}, loss={loss}, best loss={best_loss}, best param={best_param}')
+      print(f'Epoch {i_epoch}, loss={losses.mean()}, best loss={best_loss}, best param={best_param}')
 
   # Step 7: visualize the results
   visualize_a_simulate(target_params, functools.partial(f_current, i_current=0), title='Target', show=False)
