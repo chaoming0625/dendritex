@@ -48,8 +48,8 @@ dependencies = [
     'jax',
     'jaxlib',
     'numpy',
-    'brainstate',
-    'brainunit',
+    'brainstate>=0.0.2',
+    'brainunit>=0.0.2.post20240903',
     'diffrax',
 ]
 

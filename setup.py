@@ -58,7 +58,7 @@ setup(
   author_email='chao.brain@qq.com',
   packages=packages,
   python_requires='>=3.9',
-  install_requires=['numpy>=1.15', 'jax', 'brainunit>=0.0.2', 'brainstate>=0.0.2', 'diffrax'],
+  install_requires=['numpy>=1.15', 'jax', 'brainunit>=0.0.2.post20240903', 'brainstate>=0.0.2', 'diffrax'],
   url='https://github.com/chaoming0625/dendritex',
   project_urls={
     "Bug Tracker": "https://github.com/chaoming0625/dendritex/issues",
