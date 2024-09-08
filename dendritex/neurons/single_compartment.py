@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Union, Optional, Callable
 
 import brainstate as bst
-import brainunit as bu
+import brainunit as u
 
 from .._base import HHTypedNeuron, IonChannel, State4Integral
 
@@ -70,10 +70,9 @@ class SingleCompartment(HHTypedNeuron):
   def __init__(
       self,
       size: bst.typing.Size,
-      C: Union[bst.typing.ArrayLike, Callable] = 1. * bu.uF / bu.cm ** 2,
-      A: Union[bst.typing.ArrayLike, Callable] = 1e-3 * bu.cm ** 2,
-      V_th: Union[bst.typing.ArrayLike, Callable] = 0. * bu.mV,
-      V_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Uniform(-70 * bu.mV, -60. * bu.mV),
+      C: Union[bst.typing.ArrayLike, Callable] = 1. * u.uF / u.cm ** 2,
+      V_th: Union[bst.typing.ArrayLike, Callable] = 0. * u.mV,
+      V_initializer: Union[bst.typing.ArrayLike, Callable] = bst.init.Uniform(-70 * u.mV, -60. * u.mV),
       spk_fun: Callable = bst.surrogate.ReluGrad(),
       name: Optional[str] = None,
       mode: Optional[bst.mixin.Mode] = None,
@@ -85,7 +84,6 @@ class SingleCompartment(HHTypedNeuron):
     assert self.n_compartment == 1, (f'Point-based neuron only supports single compartment. '
                                      f'But got {self.n_compartment} compartments.')
     self.C = C
-    self.A = A
     self.V_th = V_th
     self._V_initializer = V_initializer
     self.spk_fun = spk_fun
@@ -103,11 +101,9 @@ class SingleCompartment(HHTypedNeuron):
     for node in channels.values():
       node.before_integral(self.V.value)
 
-  def compute_derivative(self, x=0.):
+  def compute_derivative(self, x=0. * u.nA / u.cm ** 2):
     # [ Compute the derivative of membrane potential ]
-    # 1. inputs
-    x = x * (1e-3 / self.A)
-    # 2. synapses
+    # 1. inputs + 2. synapses
     x = self.sum_current_inputs(self.V.value, init=x)
     # 3. channels
     for ch in self.nodes(level=1, include_self=False).subset(IonChannel).values():
