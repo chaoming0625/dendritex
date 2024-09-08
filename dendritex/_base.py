@@ -310,19 +310,19 @@ class IonChannel(DendriticDynamics, TreeNode):
     raise NotImplementedError
 
   def before_integral(self, *args, **kwargs):
-    raise NotImplementedError
+    pass
 
   def compute_derivative(self, *args, **kwargs):
     raise NotImplementedError
 
   def after_integral(self, *args, **kwargs):
-    raise NotImplementedError
+    pass
 
   def reset_state(self, *args, **kwargs):
-    raise NotImplementedError
+    pass
 
   def init_state(self, *args, **kwargs):
-    raise NotImplementedError
+    pass
 
 
 class IonInfo(NamedTuple):

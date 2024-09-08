@@ -32,7 +32,7 @@ import dendritex as dx
 
 class HTC(dx.neurons.SingleCompartment):
   def __init__(self, size, gKL=0.01 * (u.mS / u.cm ** 2), V_initializer=bst.init.Constant(-65. * u.mV)):
-    super().__init__(size, A=2.9e-4 * u.cm ** 2, V_initializer=V_initializer, V_th=20. * u.mV)
+    super().__init__(size, V_initializer=V_initializer, V_th=20. * u.mV)
 
     self.na = dx.ions.SodiumFixed(size, E=50. * u.mV)
     self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-30 * u.mV))
@@ -53,10 +53,13 @@ class HTC(dx.neurons.SingleCompartment):
     self.Ih = dx.channels.Ih_HM1992(size, g_max=0.01 * (u.mS / u.cm ** 2), E=-43 * u.mV)
     self.IL = dx.channels.IL(size, g_max=0.0075 * (u.mS / u.cm ** 2), E=-70 * u.mV)
 
+  def compute_derivative(self, x=0. * u.nA):
+    return super().compute_derivative(x * (1e-3 / (2.9e-4 * u.cm ** 2)))
+
 
 class RTC(dx.neurons.SingleCompartment):
   def __init__(self, size, gKL=0.01 * (u.mS / u.cm ** 2), V_initializer=bst.init.Constant(-65. * u.mV)):
-    super().__init__(size, A=2.9e-4 * u.cm ** 2, V_initializer=V_initializer, V_th=20 * u.mV)
+    super().__init__(size, V_initializer=V_initializer, V_th=20 * u.mV)
 
     self.na = dx.ions.SodiumFixed(size)
     self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-40 * u.mV))
@@ -77,10 +80,13 @@ class RTC(dx.neurons.SingleCompartment):
     self.Ih = dx.channels.Ih_HM1992(size, g_max=0.01 * (u.mS / u.cm ** 2), E=-43 * u.mV)
     self.IL = dx.channels.IL(size, g_max=0.0075 * (u.mS / u.cm ** 2), E=-70 * u.mV)
 
+  def compute_derivative(self, x=0. * u.nA):
+    return super().compute_derivative(x * (1e-3 / (2.9e-4 * u.cm ** 2)))
+
 
 class IN(dx.neurons.SingleCompartment):
   def __init__(self, size, V_initializer=bst.init.Constant(-70. * u.mV)):
-    super().__init__(size, A=1.7e-4 * u.cm ** 2, V_initializer=V_initializer, V_th=20. * u.mV)
+    super().__init__(size, V_initializer=V_initializer, V_th=20. * u.mV)
 
     self.na = dx.ions.SodiumFixed(size)
     self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-30 * u.mV))
@@ -99,10 +105,13 @@ class IN(dx.neurons.SingleCompartment):
     self.IL = dx.channels.IL(size, g_max=0.0075 * (u.mS / u.cm ** 2), E=-60 * u.mV)
     self.Ih = dx.channels.Ih_HM1992(size, g_max=0.05 * (u.mS / u.cm ** 2), E=-43 * u.mV)
 
+  def compute_derivative(self, x=0. * u.nA):
+    return super().compute_derivative(x * (1e-3 / (1.7e-4 * u.cm ** 2)))
+
 
 class TRN(dx.neurons.SingleCompartment):
   def __init__(self, size, V_initializer=bst.init.Constant(-70. * u.mV), gl=0.0075):
-    super().__init__(size, A=1.43e-4 * u.cm ** 2, V_initializer=V_initializer, V_th=20. * u.mV)
+    super().__init__(size, V_initializer=V_initializer, V_th=20. * u.mV)
 
     self.na = dx.ions.SodiumFixed(size)
     self.na.add_elem(INa=dx.channels.INa_Ba2002(size, V_sh=-40 * u.mV))
@@ -120,6 +129,9 @@ class TRN(dx.neurons.SingleCompartment):
 
     # self.IL = dx.channels.IL(size, g_max=0.01 * (u.mS / u.cm ** 2), E=-60 * u.mV)
     self.IL = dx.channels.IL(size, g_max=gl * (u.mS / u.cm ** 2), E=-60 * u.mV)
+
+  def compute_derivative(self, x=0. * u.nA):
+    return super().compute_derivative(x * (1e-3 / (1.43e-4 * u.cm ** 2)))
 
   def step_run(self, t, inp):
     # dx.rk4_step(neu, t, inp)
