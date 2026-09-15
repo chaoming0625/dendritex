@@ -187,7 +187,7 @@ assert bool(jnp.isfinite(value))
 Network 的参数集合聚合各 Cell 的原始 `Param`，按对象身份去重，保留原对象引用。
 优化器更新这些参数；初始化、运行入口和单步 `update` 中的 materialize 根据绑定关系计算物理量，
 写入机制或连接的参数缓冲。动力学状态、原始参数和物理参数缓冲因此有不同的生命周期。
-更完整的目标轨迹拟合见 [突触学习示例](../../../../examples/multi_compartment/synapse_learning.py)。
+更完整的目标轨迹拟合见 [突触学习示例](../../../../examples/optim/parameter_learning/synapse_learning.py)。
 
 ## 数据归属与生命周期
 
@@ -279,6 +279,11 @@ Vis 迁移到 BrainTools、提供简单绘图与 GUI 的方案见 [Vis TODO](../
 [顶层入口](../../../../braincell/__init__.py) 和各子包 `__all__`。
 实现放在 `_discretization` 等内部路径，不改变其顶层重导出对象的公开身份；
 例如使用 `bc.CVPerBranch`，实现位置则供开发者查阅。
+
+实验接口通过 `braincell.experimental` 显式导入，例如
+`from braincell.experimental import optim`。该命名空间不列入顶层 `braincell.__all__`，
+裸 `import braincell` 不保证提前加载它；实验接口可以独立于稳定接口演进。
+具体使用方式见 [实验工作流](../../optim/current/experimental-workflows.md)。
 
 当前 `bc.mech.Channel` / `bc.mech.Ion` 是声明，`bc.Channel` / `bc.Ion` 是运行时基类。
 跨模块命名与公共导出约定见 [接口一致性讨论](../proposals/interface-consistency.md)；
